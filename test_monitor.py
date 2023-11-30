@@ -66,5 +66,26 @@ def position_rotate(s):
         ey = (ey + 1)
 
 
+def ball_test():
+    size = 0
+    s = pg.Surface((1200, 600), 0, 16)
+
+    while True:
+        s.fill("black")
+        size += 10
+        size = size % int(s.get_width() / 2 + 1)
+        pg.draw.circle(
+            s,
+            random.choice(("green", "blue", "red")),
+            (int(s.get_width() / 2), int(s.get_height() / 2)),
+            size
+        )
+        s = pg.transform.box_blur(s, 1)
+        view = pg.transform.scale(s, (12, 6))
+        display.blit(view)
+        sleep(.02)
+
+
 # surface_rotate(s)
-position_rotate(s)
+# position_rotate(s)
+ball_test()
