@@ -1,7 +1,8 @@
 import pygame as pg
 import sys
 import signal
-from canvas_monitor import Nanoleaf, NanoleafDisplay
+from canvas_monitor import Nanoleaf, NanoleafDisplay, NanoleafDisplaySimulator
+from nanoleafapi import NanoleafConnectionError
 from time import sleep
 import random
 
@@ -13,11 +14,16 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-nl = Nanoleaf("192.168.178.214")
+display = None
+try:
+    nl = Nanoleaf("192.168.178.214")
+    display = NanoleafDisplay(nl)
+except NanoleafConnectionError:
+    display = NanoleafDisplaySimulator((12, 6), hello=False)
 
-display = NanoleafDisplay(nl)
 
-s = pg.Surface((12, 6), 0, 16)
+window = display.set_mode((12, 6), 0, 16)
+s = window.copy()
 s.fill("black")
 s.set_colorkey("black")
 
@@ -50,7 +56,8 @@ def surface_rotate(s):
         y = int((s.get_height() - 6) / 2 + .5)
         print(x, y, s.get_size())
         viewport = s.subsurface((x, y, 12, 6))
-        display.blit(viewport)
+        window.blit(viewport, (0, 0))
+        display.flip()
 
 
 def position_rotate(s):
@@ -58,7 +65,8 @@ def position_rotate(s):
     while True:
         line = s.copy()
         pg.draw.line(line, "red", (sx, sy), (ex, ey), width=2)
-        display.blit(line)
+        window.blit(line, (0, 0))
+        display.flip()
         sleep(.5)
         sx = (sx + 1) % 12
         sy = (sy + 1) % 6
@@ -82,7 +90,8 @@ def ball_test():
         )
         s = pg.transform.box_blur(s, 1)
         view = pg.transform.scale(s, (12, 6))
-        display.blit(view)
+        window.blit(view, (0, 0))
+        display.flip()
         sleep(.02)
 
 

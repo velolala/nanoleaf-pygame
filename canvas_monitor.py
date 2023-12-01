@@ -1,6 +1,9 @@
 from nanoleafapi import Nanoleaf
+from math import prod
+from typing import Tuple
 from time import sleep
-from pygame import Surface
+import pygame as pg
+from pygame import Rect, Surface
 import socket
 from nanoleafapi import (
     RED,
@@ -23,21 +26,28 @@ NANOLEAF_UDP_PORT = 60222
 class NanoleafDisplay():
 
     def __init__(self, nl: Nanoleaf, hello=True):
+        if nl is not None:
+            self.nanoleaf_socket = socket.socket(
+                socket.AF_INET, socket.SOCK_DGRAM, 0
+            )
+            self.nl = nl
 
-        self.nanoleaf_socket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM, 0
-        )
-        self.nl = nl
+            panels = self.nl.get_layout()["positionData"]
+            panels = sorted(panels, key=lambda p: (-p['y'], p['x']))
+            self.panel_ids = [p["panelId"] for p in panels]
+            n_panels = len(self.panel_ids)
 
-        panels = self.nl.get_layout()["positionData"]
-        panels = sorted(panels, key=lambda p: (-p['y'], p['x']))
-        self.panel_ids = [p["panelId"] for p in panels]
-        n_panels = len(self.panel_ids)
+            self.n_panels_b = n_panels.to_bytes(2, "big")
+            self.nl.enable_extcontrol()
 
-        self.n_panels_b = n_panels.to_bytes(2, "big")
-        self.nl.enable_extcontrol()
-        if hello:
-            self.hello()
+            self.window = Surface(
+                (
+                    (len(set(p["x"] for p in panels))),
+                    (len(set(p["y"] for p in panels))),
+                ), 0, 16
+            )
+            if hello:
+                self.hello()
 
     def hello(self):
         colors = (
@@ -56,11 +66,24 @@ class NanoleafDisplay():
     def close(self):
         self.nanoleaf_socket.close()
 
-    def blit(self, s: Surface):
+    def set_mode(self, geometry: Tuple[int, int], *args, **kwargs) -> Surface:
+        print(f"ignoring {args} and {kwargs}")
+        assert geometry == self.window.get_size()
+        return self.window
+
+    def update(self, rect: Rect):
         pixels = []
-        for y in range(s.get_height()):
-            pixels.extend([s.get_at((x, y))[:3] for x in range(s.get_width())])
+        for y in range(self.window.get_height()):
+            pixels.extend(
+                [
+                    self.window.get_at((x, y))[:3]
+                    for x in range(self.window.get_width())
+                ]
+            )
         self.draw_frame(pixels)
+
+    def flip(self):
+        self.update(Rect(self.window.get_size()))
 
     def draw_frame(self, frame_data):
         transition = 0
@@ -86,3 +109,50 @@ class NanoleafDisplay():
         self.nanoleaf_socket.sendto(
             send_data, (self.nl.ip, NANOLEAF_UDP_PORT)
         )
+
+
+class NanoleafDisplaySimulator(NanoleafDisplay):
+
+    def __init__(self, geometry, scale=40, hello=True):
+        width, height = geometry
+        self._screen = pg.display.set_mode(
+            (width * scale, height * scale),
+            0, 16
+        )
+        self.window = Surface(geometry, 0, 16)
+        if hello:
+            self.hello()
+        super().__init__(None, hello=False)
+
+    def update(self, rect: Rect):
+        scaled = pg.transform.scale(
+            self.window.copy(),
+            self._screen.get_size(),
+        )
+        self._screen.blit(scaled, (0, 0))
+        pg.display.update(rect)
+
+    def flip(self):
+        self.update(Rect((0, 0), self._screen.get_size()))
+
+    def hello(self):
+        colors = (
+            BLACK, RED, ORANGE, YELLOW, GREEN,
+            LIGHT_BLUE, BLUE, PINK, PURPLE, WHITE,
+        )
+        for step in range(prod(self.window.get_size())):
+            i = 0
+            for y in range(self.window.get_height()):
+                for x in range(self.window.get_width()):
+                    self.window.set_at(
+                        (x, y),
+                        colors[(step + i) % len(colors)]
+                    )
+                    i += 1
+            self.flip()
+            sleep(3. / prod(self.window.get_size()))
+        self.window.fill(BLACK)
+        self.flip()
+
+    def close(self):
+        pg.quit()
