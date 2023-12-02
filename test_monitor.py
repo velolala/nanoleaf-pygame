@@ -64,13 +64,14 @@ def position_rotate(s):
     sx, sy, ex, ey = (0, 0, 12, 6)
     while True:
         line = s.copy()
-        pg.draw.line(line, "red", (sx, sy), (ex, ey), width=2)
+        pg.draw.line(line, "red", (sx, sy), (ex, ey), width=1)
         window.blit(line, (0, 0))
         display.flip()
+        window.fill("black")
         sleep(.5)
         sx = (sx + 1) % 12
-        sy = (sy + 1) % 6
-        ex = (ex + 1)
+        sy = 0
+        ex = abs((ex - 1) % 12)
         ey = (ey + 1)
 
 
@@ -96,5 +97,5 @@ def ball_test():
 
 
 # surface_rotate(s)
-# position_rotate(s)
-ball_test()
+position_rotate(s)
+# ball_test()

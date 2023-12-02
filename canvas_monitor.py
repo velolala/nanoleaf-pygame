@@ -22,6 +22,11 @@ BLACK = (0, 0, 0)
 nanoleaf_host = '192.168.178.214'
 NANOLEAF_UDP_PORT = 60222
 
+COLORS = [
+    BLACK, RED, ORANGE, YELLOW, GREEN,
+    LIGHT_BLUE, BLUE, PINK, PURPLE, WHITE,
+]
+
 
 class NanoleafDisplay():
 
@@ -50,13 +55,9 @@ class NanoleafDisplay():
                 self.hello()
 
     def hello(self):
-        colors = (
-            BLACK, RED, ORANGE, YELLOW, GREEN,
-            LIGHT_BLUE, BLUE, PINK, PURPLE, WHITE,
-        )
         for step in range(len(self.panel_ids)):
             frame_data = [
-                colors[(step + i) % len(colors)]
+                COLORS[(step + i) % len(COLORS)]
                 for i in range(len(self.panel_ids))
             ]
             self.draw_frame(frame_data)
@@ -83,7 +84,7 @@ class NanoleafDisplay():
         self.draw_frame(pixels)
 
     def flip(self):
-        self.update(Rect(self.window.get_size()))
+        self.update(Rect((0, 0), self.window.get_size()))
 
     def draw_frame(self, frame_data):
         transition = 0
@@ -117,9 +118,10 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
         width, height = geometry
         self._screen = pg.display.set_mode(
             (width * scale, height * scale),
-            0, 16
+            pg.DOUBLEBUF, 16
         )
         self.window = Surface(geometry, 0, 16)
+        self.scale = scale
         if hello:
             self.hello()
         super().__init__(None, hello=False)
@@ -136,17 +138,13 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
         self.update(Rect((0, 0), self._screen.get_size()))
 
     def hello(self):
-        colors = (
-            BLACK, RED, ORANGE, YELLOW, GREEN,
-            LIGHT_BLUE, BLUE, PINK, PURPLE, WHITE,
-        )
         for step in range(prod(self.window.get_size())):
             i = 0
             for y in range(self.window.get_height()):
                 for x in range(self.window.get_width()):
                     self.window.set_at(
                         (x, y),
-                        colors[(step + i) % len(colors)]
+                        COLORS[(step + i) % len(COLORS)]
                     )
                     i += 1
             self.flip()
@@ -156,3 +154,26 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
 
     def close(self):
         pg.quit()
+
+
+class NanoleafDual():
+
+    def __init__(self, nl, scale=80, hello=True):
+        self.canvas = NanoleafDisplay(nl, hello=hello)
+        self.dimensions = self.canvas.window.get_size()
+        self.simulator = NanoleafDisplaySimulator(self.dimensions, scale=scale, hello=hello)
+
+    def close(self):
+        self.canvas.quit()
+        self.simulator.quit()
+
+    def update(self, rect):
+        self.canvas.window = self.simulator.window.copy()
+        self.simulator.update(rect)
+        self.canvas.update(rect)
+
+    def set_mode(self, *args, **kwargs):
+        return self.simulator.set_mode(*args, **kwargs)
+
+    def flip(self):
+        self.update(Rect((0, 0), self.simulator._screen.get_size()))
