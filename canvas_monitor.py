@@ -159,18 +159,29 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
 class NanoleafDual():
 
     def __init__(self, nl, scale=80, hello=True):
-        self.canvas = NanoleafDisplay(nl, hello=hello)
-        self.dimensions = self.canvas.window.get_size()
-        self.simulator = NanoleafDisplaySimulator(self.dimensions, scale=scale, hello=hello)
+        if nl is not None:
+            self.canvas = NanoleafDisplay(nl, hello=hello)
+            self.dimensions = self.canvas.window.get_size()
+        else:
+            # FIXME: hardcoded dimensions
+            self.dimensions = (12, 6)
+            self.canvas = None
+        self.simulator = NanoleafDisplaySimulator(
+            self.dimensions,
+            scale=scale,
+            hello=hello
+        )
 
     def close(self):
-        self.canvas.quit()
+        if self.canvas is not None:
+            self.canvas.quit()
         self.simulator.quit()
 
     def update(self, rect):
-        self.canvas.window = self.simulator.window.copy()
+        if self.canvas is not None:
+            self.canvas.window = self.simulator.window.copy()
+            self.canvas.update(rect)
         self.simulator.update(rect)
-        self.canvas.update(rect)
 
     def set_mode(self, *args, **kwargs):
         return self.simulator.set_mode(*args, **kwargs)

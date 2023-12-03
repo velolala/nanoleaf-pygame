@@ -4,6 +4,7 @@ from time import sleep
 from itertools import repeat, chain
 import pygame as pg
 from pygame import Surface
+from nanoleafapi.nanoleaf import NanoleafConnectionError
 from canvas_monitor import (
     Nanoleaf,
     NanoleafDual,
@@ -26,7 +27,11 @@ color = COLORS[1]
 pg.init()
 
 # display = NanoleafDisplaySimulator((12, 6), hello=False)
-nl = Nanoleaf("192.168.178.214")
+nl = None
+try:
+    nl = Nanoleaf("192.168.178.214")
+except NanoleafConnectionError:
+    pass
 dual = NanoleafDual(nl, hello=False)
 display = dual.simulator
 
@@ -71,7 +76,7 @@ while True:
                 win.fill("black")
             if k == 119 and m == 64:
                 # Ctrl+W(rite)
-                save(dual.canvas.window)
+                save(dual.simulator.window)
             if k == 113 and m == 64:
                 # Ctrl+Q(uit)
                 signal_handler(None, None)
