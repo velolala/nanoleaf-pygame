@@ -1,5 +1,7 @@
 import sys
 import signal
+from time import sleep
+from itertools import repeat, chain
 import pygame as pg
 from pygame import Surface
 from canvas_monitor import (
@@ -7,6 +9,8 @@ from canvas_monitor import (
     NanoleafDual,
     COLORS,
 )
+from shapes import cloud1, cloud2, cloud3, flash_r, HEART
+from draw import center, draw, dissolve, scroll_in, lshift
 
 
 def signal_handler(sig, frame):
@@ -52,13 +56,16 @@ flags = dual.simulator._screen.get_flags()
 while True:
     for event in pg.event.get():
         if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                _color = color
+            if event.button == 3:
+                _color = COLORS[0]
             (_x, _y) = pg.mouse.get_pos()
             s = display.scale
             x, y = _x // s, _y // s
-            pg.draw.rect(win, color, (x, y, 1, 1))
+            pg.draw.rect(win, _color, (x, y, 1, 1))
         if event.type == pg.KEYDOWN and pg.key.get_focused():
             k, m = event.key, event.mod
-            print(k)
             if k == 99 and m == 64:
                 # Ctrl+C(lear)
                 win.fill("black")
@@ -82,5 +89,34 @@ while True:
                     flags ^= pg.FULLSCREEN
                 print(flags)
                 pg.display.set_mode(dual.simulator._screen.get_size(), flags)
+            if k == 112:
+                # P(lay) something
+                draw(win, center(HEART), COLORS)
+                dual.flip()
+                sleep(1)
+                flash_l = lshift(flash_r, 6)
+                for i in range(30):
+                    if i % 2 == 0:
+                        draw(win, flash_r, COLORS)
+                    else:
+                        draw(win, flash_l, COLORS)
+                    dual.flip()
+                    sleep(.007)
+                    win.fill("black")
+                    dual.flip()
+                    sleep(.03)
+                for frame in chain(*repeat(scroll_in(HEART), 5)):
+                    draw(win, frame, COLORS)
+                    dual.flip()
+                    sleep(.3)
+                frames = [cloud1, cloud2, cloud3]
+                for i in range(len(frames) * 10):
+                    draw(win, frames[i % len(frames)], COLORS)
+                    dual.flip()
+                    sleep(.07)
+                for frame in dissolve(HEART):
+                    draw(win, frame, COLORS)
+                    dual.flip()
+                    sleep(.1)
 
         dual.flip()
