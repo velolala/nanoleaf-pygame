@@ -1,12 +1,52 @@
 from itertools import chain
 
 
-def rshift(shape, i):
-    return "\n".join(i * "0" + pix[:-i] for pix in shape.strip().split("\n"))
+def rshift(shape, i, wrap=False):
+    lines = shape.strip().split("\n")
+    if i == 0:
+        return shape
+    if wrap:
+        return "\n".join(
+            line[-i:] + line[:-i] for line in lines
+        )
+    else:
+        return "\n".join(
+            i * "0" + line[:-i] for line in lines
+        )
 
 
-def lshift(shape, i):
-    return "\n".join(pix[i:] + "0" * i for pix in shape.strip().split("\n"))
+def lshift(shape, i, wrap=False):
+    lines = shape.strip().split("\n")
+    if wrap:
+        return "\n".join(
+            line[i:] + line[:-i] for line in lines
+        )
+    else:
+        return "\n".join(
+            line[i:] + "0" * i for line in lines
+        )
+
+
+def ushift(shape, i, wrap=False):
+    lines = shape.strip().split("\n")
+    if wrap:
+        return "\n".join(
+            lines[i:] + lines[:i]
+        )
+    return "\n".join(
+        lines[i:] + ["0" * len(lines[0]) for _ in range(i)]
+    )
+
+
+def dshift(shape, i, wrap=False):
+    lines = shape.strip().split("\n")
+    if wrap:
+        return "\n".join(
+            lines[-i:] + lines[:len(lines) - i]
+        )
+    return "\n".join(
+        ["0" * len(lines[0]) for _ in range(i)] + lines[:-i]
+    )
 
 
 def scroll(shape):
@@ -42,10 +82,13 @@ def center(shape):
     if suf == pre:
         return shape
     margin = (suf + pre) // 2
-    if pre < margin:
+    if margin == 0:
+        return shape
+    if pre < suf:
         return rshift(shape, margin - pre)
-    if suf < margin:
-        return lshift(shape, margin - pre)
+    if suf < pre:
+        return lshift(shape, margin - suf)
+    return shape
 
 
 def scroll_in(shape):

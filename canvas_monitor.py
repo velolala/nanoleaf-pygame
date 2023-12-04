@@ -23,9 +23,20 @@ nanoleaf_host = '192.168.178.214'
 NANOLEAF_UDP_PORT = 60222
 
 COLORS = [
-    BLACK, RED, ORANGE, YELLOW, GREEN,
-    LIGHT_BLUE, BLUE, PINK, PURPLE, WHITE,
+    BLACK,
+    RED,
+    ORANGE,
+    YELLOW,
+    GREEN,
+    LIGHT_BLUE,
+    BLUE,
+    PINK,
+    PURPLE,
+    WHITE,
 ]
+
+
+DEPTH = 32
 
 
 class NanoleafDisplay():
@@ -49,7 +60,7 @@ class NanoleafDisplay():
                 (
                     (len(set(p["x"] for p in panels))),
                     (len(set(p["y"] for p in panels))),
-                ), 0, 16
+                ), 0, DEPTH
             )
             if hello:
                 self.hello()
@@ -118,9 +129,9 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
         width, height = geometry
         self._screen = pg.display.set_mode(
             (width * scale, height * scale),
-            pg.DOUBLEBUF, 16
+            pg.DOUBLEBUF, DEPTH
         )
-        self.window = Surface(geometry, 0, 16)
+        self.window = Surface(geometry, 0, DEPTH)
         self.scale = scale
         if hello:
             self.hello()
