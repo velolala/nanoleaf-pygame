@@ -50,9 +50,10 @@ def dshift(shape, i, wrap=False):
 
 
 def scroll(shape):
-    for i in range(len(shape.strip().split("\n")[0])):
+    width = len(shape.strip().split("\n")[0])
+    for i in range(width):
         yield rshift(shape, i)
-    for i in range(len(shape.strip().split("\n")[0])):
+    for i in range(width):
         yield lshift(shape, i)
 
 

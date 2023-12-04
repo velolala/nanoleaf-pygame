@@ -10,7 +10,7 @@ from pygame import Surface
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (center, dissolve, draw, dshift, lshift, rshift, scroll_in,
                   ushift)
-from shapes import HEART, cloud1, cloud2, cloud3, flash_r
+from shapes import HEART, cloud1, cloud2, cloud3, flash_r, velo, love
 
 
 def signal_handler(sig, frame):
@@ -101,18 +101,18 @@ while True:
                     shape = save(dual.canvas.window, out=False)
                     win.fill("black")
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
-                if k == 99:
+                if k == pg.K_c:
                     # C(enter)
-                    shape = save(dual.simulator.window)
+                    shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, center(shape), COLORS)
-                if k == 98:
+                if k == pg.K_b:
                     # B(lack)
                     color = COLORS[0]
-                if k == 110:
+                if k == pg.K_n:
                     # N(ext color)
                     color = COLORS[(COLORS.index(color) + 1) % len(COLORS)]
-                if k == 102:
+                if k == pg.K_f:
                     # F(ullscreen toggle)
                     if flags & pg.FULLSCREEN is False:
                         flags |= pg.FULLSCREEN
@@ -123,8 +123,26 @@ while True:
                         dual.simulator._screen.get_size(),
                         flags
                     )
-                if k == 112:
+                if k == pg.K_p:
                     # P(lay) something
+                    for i in range(28):
+                        if i < 8:
+                            draw(win, velo, COLORS)
+                            dual.flip()
+                            sleep(.2)
+                        elif i < 15:
+                            draw(win, rshift(velo, i - 8, wrap=True), COLORS)
+                            dual.flip()
+                            sleep(.2)
+                        else:
+                            draw(win, love, COLORS)
+                            dual.flip()
+                            sleep(.2)
+                        if i % 2 == 0:
+                            win.fill("black")
+                            dual.flip()
+                            sleep(.1)
+
                     draw(win, center(HEART), COLORS)
                     dual.flip()
                     sleep(1)
@@ -139,18 +157,21 @@ while True:
                         win.fill("black")
                         dual.flip()
                         sleep(.03)
-                    for frame in chain(*repeat(scroll_in(HEART), 5)):
+                    for frame in list(
+                        chain(*repeat(list(scroll_in(HEART)), 6))
+                    )[:-7]:
                         draw(win, frame, COLORS)
                         dual.flip()
-                        sleep(.3)
+                        sleep(.05)
+                    for frame in dissolve(center(HEART)):
+                        draw(win, frame, COLORS)
+                        dual.flip()
+                        sleep(.1)
                     frames = [cloud1, cloud2, cloud3]
                     for i in range(len(frames) * 10):
                         draw(win, frames[i % len(frames)], COLORS)
                         dual.flip()
                         sleep(.07)
-                    for frame in dissolve(HEART):
-                        draw(win, frame, COLORS)
-                        dual.flip()
-                        sleep(.1)
+                    win.fill("black")
 
         dual.flip()

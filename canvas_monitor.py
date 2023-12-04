@@ -169,7 +169,7 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
 
 class NanoleafDual():
 
-    def __init__(self, nl, scale=80, hello=True):
+    def __init__(self, nl, scale=120, hello=True):
         if nl is not None:
             self.canvas = NanoleafDisplay(nl, hello=hello)
             self.dimensions = self.canvas.window.get_size()
