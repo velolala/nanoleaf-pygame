@@ -1,7 +1,6 @@
 import signal
 import sys
 from itertools import chain, repeat
-from time import sleep
 
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
@@ -10,7 +9,7 @@ from pygame import Surface
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (center, dissolve, draw, dshift, lshift, rshift, scroll_in,
                   ushift)
-from shapes import HEART, cloud1, cloud2, cloud3, flash_r, velo, love
+from shapes import HEART, blackout, cloud1, cloud2, cloud3, flash_r, velo, love
 
 
 def signal_handler(sig, frame):
@@ -55,9 +54,45 @@ def save(win: Surface, out=True):
     return result
 
 
-flags = dual.simulator._screen.get_flags()
+def movie():
+    for i in range(3 * FPS):
+        if i % 12 < 2:
+            yield blackout
+        elif i < FPS:
+            yield velo
+        elif i < 2 * FPS:
+            yield rshift(velo, int((i - FPS) // (FPS/6.)), wrap=True)
+        else:
+            yield love
+    for _ in range(FPS):
+        yield center(HEART)
+    flash_l = lshift(flash_r, 6)
+    for i in range(30):
+        if i % 8 < 5:
+            yield flash_r
+        else:
+            yield flash_l
+    for frame in list(
+        chain(*repeat(list(scroll_in(HEART)), 6))
+    )[:-7]:
+        yield from repeat(frame, FPS // 5)
+    for frame in dissolve(center(HEART)):
+        yield from repeat(frame, FPS // 5)
+    frames = [cloud1, cloud2, cloud3]
+    for i in range(len(frames) * 10):
+        yield from repeat(frames[i % len(frames)], FPS // 5)
+    yield blackout
 
+
+flags = dual.simulator._screen.get_flags()
+clock = pg.Clock()
+speed_x = speed_y = 0
+moved_x = moved_y = 0
+frame = frames = None
+FPS = 120
+ACCEL = .001
 while True:
+    dt = clock.tick(FPS)
     for event in pg.event.get():
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -68,20 +103,17 @@ while True:
             s = display.scale
             x, y = _x // s, _y // s
             pg.draw.rect(win, _color, (x, y, 1, 1))
-            # drawn_color = win.get_at((x, y))
-            # if drawn_color != _color:
-            #     COLORS[COLORS.index(_color)] = drawn_color
-            #     _color = drawn_color
         if event.type == pg.KEYDOWN and pg.key.get_focused():
             k, m = event.key, event.mod
-            if m == 64:
-                if k == 99:
+            if m == pg.KMOD_LCTRL:
+                if k == pg.K_c:
                     # Ctrl+C(lear)
                     win.fill("black")
-                if k == 119:
+                    speed_x = speed_y = 0
+                if k == pg.K_w:
                     # Ctrl+W(rite)
                     save(dual.simulator.window)
-                if k == 113:
+                if k == pg.K_q:
                     # Ctrl+Q(uit)
                     signal_handler(None, None)
             else:
@@ -89,18 +121,22 @@ while True:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, lshift(shape, 1, wrap=True), COLORS)
+                    speed_x -= ACCEL
                 if k == pg.K_RIGHT:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, rshift(shape, 1, wrap=True), COLORS)
+                    speed_x += ACCEL
                 if k == pg.K_UP:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, ushift(shape, 1, wrap=True), COLORS)
+                    speed_y += ACCEL
                 if k == pg.K_DOWN:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
+                    speed_y -= ACCEL
                 if k == pg.K_c:
                     # C(enter)
                     shape = save(dual.simulator.window, out=False)
@@ -125,53 +161,36 @@ while True:
                     )
                 if k == pg.K_p:
                     # P(lay) something
-                    for i in range(28):
-                        if i < 8:
-                            draw(win, velo, COLORS)
-                            dual.flip()
-                            sleep(.2)
-                        elif i < 15:
-                            draw(win, rshift(velo, i - 8, wrap=True), COLORS)
-                            dual.flip()
-                            sleep(.2)
-                        else:
-                            draw(win, love, COLORS)
-                            dual.flip()
-                            sleep(.2)
-                        if i % 2 == 0:
-                            win.fill("black")
-                            dual.flip()
-                            sleep(.1)
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = movie()
+    if frames is not None:
+        try:
+            frame = next(frames)
+            speed_x = speed_y = moved_x = moved_y = 0
+        except StopIteration:
+            frame = None
+            frames = None
+            draw(dual.simulator.window, _prev_shape, COLORS)
 
-                    draw(win, center(HEART), COLORS)
-                    dual.flip()
-                    sleep(1)
-                    flash_l = lshift(flash_r, 6)
-                    for i in range(30):
-                        if i % 2 == 0:
-                            draw(win, flash_r, COLORS)
-                        else:
-                            draw(win, flash_l, COLORS)
-                        dual.flip()
-                        sleep(.007)
-                        win.fill("black")
-                        dual.flip()
-                        sleep(.03)
-                    for frame in list(
-                        chain(*repeat(list(scroll_in(HEART)), 6))
-                    )[:-7]:
-                        draw(win, frame, COLORS)
-                        dual.flip()
-                        sleep(.05)
-                    for frame in dissolve(center(HEART)):
-                        draw(win, frame, COLORS)
-                        dual.flip()
-                        sleep(.1)
-                    frames = [cloud1, cloud2, cloud3]
-                    for i in range(len(frames) * 10):
-                        draw(win, frames[i % len(frames)], COLORS)
-                        dual.flip()
-                        sleep(.07)
-                    win.fill("black")
-
-        dual.flip()
+    if frame is not None:
+        shape = frame
+    else:
+        shape = save(dual.simulator.window, out=False)
+    win.fill("black")
+    move_x = speed_x * max(1, dt)
+    move_y = speed_y * max(1, dt)
+    moved_x += move_x
+    moved_y += move_y
+    # print(speed_x, move_x, moved_x, speed_y, move_y, moved_y, dt)
+    if moved_x >= 1:
+        shape = rshift(shape, int(moved_x), wrap=True)
+    elif moved_x <= -1:
+        shape = lshift(shape, -int(moved_x), wrap=True)
+    if moved_y >= 1:
+        shape = ushift(shape, int(moved_y), wrap=True)
+    elif moved_y <= -1:
+        shape = dshift(shape, - int(moved_y), wrap=True)
+    moved_x -= int(moved_x)
+    moved_y -= int(moved_y)
+    draw(win, shape, COLORS)
+    dual.flip()
