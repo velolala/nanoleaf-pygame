@@ -95,9 +95,9 @@ def center(shape):
 def scroll_in(shape):
     lines = shape.strip().split("\n")
 
-    for left in range(all_zero([line[::-1] for line in lines]) + 1, 0, -1):
+    for left in range(all_zero([line[::-1] for line in lines]), 0, -1):
         yield lshift(shape, left)
-    for right in range(1, len(lines[0])):
+    for right in range(0, len(lines[0])):
         yield rshift(shape, right)
 
 
