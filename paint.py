@@ -9,7 +9,7 @@ from pygame import Surface
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (center, dissolve, draw, dshift, lshift, rshift, scroll_in,
                   ushift)
-from shapes import HEART, blackout, cloud1, cloud2, cloud3, flash_r, velo, love
+from shapes import HEART, blackout, cloudrain, cloud1, flash_r, velo, love
 
 
 def signal_handler(sig, frame):
@@ -73,14 +73,15 @@ def movie():
         else:
             yield flash_l
     for frame in list(
-        chain(*repeat(list(scroll_in(HEART)), 6))
-    )[:-7]:
+        chain(*repeat(list(scroll_in(HEART)), 2))
+    )[:-9]:
         yield from repeat(frame, FPS // 5)
     for frame in dissolve(center(HEART)):
         yield from repeat(frame, FPS // 5)
-    frames = [cloud1, cloud2, cloud3]
-    for i in range(len(frames) * 10):
-        yield from repeat(frames[i % len(frames)], FPS // 5)
+    for frame in list(scroll_in(center(cloud1)))[:-11]:
+        yield from repeat(frame, FPS // 5)
+    for frame in chain(*repeat(cloudrain, 3)):
+        yield from repeat(frame, FPS // 10)
     yield blackout
 
 
