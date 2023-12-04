@@ -80,25 +80,25 @@ while True:
                     win.fill("black")
                 if k == 119:
                     # Ctrl+W(rite)
-                    save(dual.canvas.window)
+                    save(dual.simulator.window)
                 if k == 113:
                     # Ctrl+Q(uit)
                     signal_handler(None, None)
             else:
                 if k == pg.K_LEFT:
-                    shape = save(dual.canvas.window, out=False)
+                    shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, lshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_RIGHT:
-                    shape = save(dual.canvas.window, out=False)
+                    shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, rshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_UP:
-                    shape = save(dual.canvas.window, out=False)
+                    shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, ushift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_DOWN:
-                    shape = save(dual.canvas.window, out=False)
+                    shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_c:
