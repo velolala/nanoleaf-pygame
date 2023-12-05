@@ -5,6 +5,8 @@ from itertools import chain, repeat
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
+from rtmidi.midiutil import open_midiinput
+from mido.messages.decode import decode_message
 
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (bounce, center, dissolve, draw, dshift, lshift, rshift,
@@ -15,6 +17,7 @@ from shapes import (HEART, blackout, cloud1, cloudrain, flash_r, love, velo,
 
 def signal_handler(sig, frame):
     display.close()
+    close_midi()
     pg.quit()
     sys.exit(0)
 
@@ -22,8 +25,58 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 color = COLORS[1]
+WIDTH, HEIGHT = (12, 6)
+FILL = COLORS[0]
+
+
+class MidiRecv:
+    def __init__(self):
+        self.controller_state = dict()
+        self.speed_x = 0
+        self.speed_y = 0
+        self.fill_r = 0
+        self.fill_g = 0
+        self.fill_b = 0
+
+    def get_speed(self):
+        return (self.speed_x, self.speed_y)
+
+    def get_fill(self):
+        return (self.fill_r, self.fill_g, self.fill_b)
+
+    def __call__(self, event, data=None):
+        msg, what = event
+        content = decode_message(msg)
+        if content["control"] == 14:
+            # max speed should be [-0.0555555, 0.05555555]
+            self.speed_x = -(63 - content["value"]) / 63 * .05
+        if content["control"] == 15:
+            self.speed_y = -(63 - content["value"]) / 63 * .05
+        if content["control"] == 0:
+            self.fill_r = content["value"] / 127. * 255
+        if content["control"] == 1:
+            self.fill_g = content["value"] / 127. * 255
+        if content["control"] == 2:
+            self.fill_b = content["value"] / 127. * 255
+
+
+midi = MidiRecv()
+
+
+def install_midi():
+    m_in, port_name = open_midiinput(1)  # FIXME: hardcoded port
+    print(port_name)
+    m_in.set_callback(midi)
+    m_in.ignore_types(timing=False)
+    return m_in
+
+
+def close_midi():
+    m_in.close_port()
+
 
 pg.init()
+m_in = install_midi()
 
 # display = NanoleafDisplaySimulator((12, 6), hello=False)
 nl = None
@@ -114,7 +167,7 @@ while True:
             if m == pg.KMOD_LCTRL:
                 if k == pg.K_c:
                     # Ctrl+C(lear)
-                    win.fill("black")
+                    win.fill(FILL)
                     speed_x = speed_y = 0
                 if k == pg.K_w:
                     # Ctrl+W(rite)
@@ -139,24 +192,24 @@ while True:
             else:
                 if k == pg.K_LEFT:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill("black")
+                    win.fill(FILL)
                     draw(win, lshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_RIGHT:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill("black")
+                    win.fill(FILL)
                     draw(win, rshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_UP:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill("black")
+                    win.fill(FILL)
                     draw(win, ushift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_DOWN:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill("black")
+                    win.fill(FILL)
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_c:
                     # C(enter)
                     shape = save(dual.simulator.window, out=False)
-                    win.fill("black")
+                    win.fill(FILL)
                     draw(win, center(shape), COLORS)
                 if k == pg.K_b:
                     # B(lack)
@@ -194,7 +247,9 @@ while True:
         shape = frame
     else:
         shape = save(dual.simulator.window, out=False)
-    win.fill("black")
+    win.fill(FILL)
+    speed_x, speed_y = midi.get_speed()
+
     move_x = speed_x * max(1, dt)
     move_y = speed_y * max(1, dt)
     moved_x += move_x
