@@ -7,8 +7,8 @@ from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
 
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
-from draw import (center, dissolve, draw, dshift, lshift, rshift, scroll_in,
-                  ushift)
+from draw import (bounce, center, dissolve, draw, dshift, lshift, rshift,
+                  scroll_in, ushift)
 from shapes import HEART, blackout, cloudrain, cloud1, flash_r, velo, love
 
 
@@ -117,27 +117,36 @@ while True:
                 if k == pg.K_q:
                     # Ctrl+Q(uit)
                     signal_handler(None, None)
+                if k == pg.K_LEFT:
+                    speed_x -= ACCEL
+                if k == pg.K_RIGHT:
+                    speed_x += ACCEL
+                if k == pg.K_UP:
+                    speed_y += ACCEL
+                if k == pg.K_DOWN:
+                    speed_y -= ACCEL
+                if k == pg.K_b:
+                    # Ctrl+B(ounce)
+                    shape = save(dual.simulator.window, out=False)
+                    _prev_shape = shape
+                    frames = bounce(shape, FPS // 20)
             else:
                 if k == pg.K_LEFT:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, lshift(shape, 1, wrap=True), COLORS)
-                    speed_x -= ACCEL
                 if k == pg.K_RIGHT:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, rshift(shape, 1, wrap=True), COLORS)
-                    speed_x += ACCEL
                 if k == pg.K_UP:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, ushift(shape, 1, wrap=True), COLORS)
-                    speed_y += ACCEL
                 if k == pg.K_DOWN:
                     shape = save(dual.simulator.window, out=False)
                     win.fill("black")
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
-                    speed_y -= ACCEL
                 if k == pg.K_c:
                     # C(enter)
                     shape = save(dual.simulator.window, out=False)

@@ -1,4 +1,4 @@
-from itertools import chain
+from itertools import chain, repeat
 
 
 def rshift(shape, i, wrap=False):
@@ -25,6 +25,21 @@ def lshift(shape, i, wrap=False):
         return "\n".join(
             line[i:] + "0" * i for line in lines
         )
+
+
+def bounce(shape, speed, wrap=False):
+    yield from repeat(lshift(shape, 1, wrap), speed)
+    yield from repeat(shape, speed)
+    yield from repeat(rshift(shape, 1, wrap), speed)
+    yield from repeat(shape, speed)
+    yield from repeat(lshift(shape, 1, wrap), speed // 3)
+    yield from repeat(lshift(shape, 2, wrap), speed // 3)
+    yield from repeat(lshift(shape, 1, wrap), speed // 3)
+    yield from repeat(shape, speed)
+    yield from repeat(rshift(shape, 1, wrap), speed // 3)
+    yield from repeat(rshift(shape, 2, wrap), speed // 3)
+    yield from repeat(rshift(shape, 1, wrap), speed // 3)
+    yield from repeat(shape, speed)
 
 
 def ushift(shape, i, wrap=False):
