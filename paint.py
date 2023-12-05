@@ -8,8 +8,9 @@ from pygame import Surface
 
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (bounce, center, dissolve, draw, dshift, lshift, rshift,
-                  scroll_in, ushift)
-from shapes import HEART, blackout, cloudrain, cloud1, flash_r, velo, love
+                  scroll, scroll_in, ushift)
+from shapes import (HEART, blackout, cloud1, cloudrain, flash_r, love, velo,
+                    wave)
 
 
 def signal_handler(sig, frame):
@@ -82,6 +83,8 @@ def movie():
         yield from repeat(frame, FPS // 5)
     for frame in chain(*repeat(cloudrain, 3)):
         yield from repeat(frame, FPS // 10)
+    for frame in chain(*repeat(list(scroll(wave)), FPS // 20)):
+        yield from repeat(frame, FPS // 40)
     yield blackout
 
 
@@ -90,6 +93,8 @@ clock = pg.Clock()
 speed_x = speed_y = 0
 moved_x = moved_y = 0
 frame = frames = None
+_prev_shape = None
+_prev_acceleration = None
 FPS = 120
 ACCEL = .001
 while True:
@@ -129,6 +134,7 @@ while True:
                     # Ctrl+B(ounce)
                     shape = save(dual.simulator.window, out=False)
                     _prev_shape = shape
+                    _prev_acceleration = speed_x, moved_x, speed_y, moved_y
                     frames = bounce(shape, FPS // 20)
             else:
                 if k == pg.K_LEFT:
@@ -181,6 +187,8 @@ while True:
             frame = None
             frames = None
             draw(dual.simulator.window, _prev_shape, COLORS)
+            if _prev_acceleration is not None:
+                speed_x, moved_x, speed_y, moved_y = _prev_acceleration
 
     if frame is not None:
         shape = frame

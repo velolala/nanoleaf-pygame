@@ -64,14 +64,6 @@ def dshift(shape, i, wrap=False):
     )
 
 
-def scroll(shape):
-    width = len(shape.strip().split("\n")[0])
-    for i in range(width):
-        yield rshift(shape, i)
-    for i in range(width):
-        yield lshift(shape, i)
-
-
 def dissolve(shape):
     lines = shape.strip().split("\n")
     yield shape
@@ -114,6 +106,12 @@ def scroll_in(shape):
         yield lshift(shape, left)
     for right in range(0, len(lines[0])):
         yield rshift(shape, right)
+
+
+def scroll(shape, wrap=True):
+    width = len(shape.strip().split("\n")[0])
+    for i in range(width):
+        yield rshift(shape, i, wrap=wrap)
 
 
 def draw(s, shape, palette):
