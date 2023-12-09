@@ -1,4 +1,4 @@
-from itertools import chain, repeat
+from itertools import repeat
 from copy import deepcopy
 
 EMPTY = (0, 0, 0)
@@ -72,9 +72,10 @@ def dissolve(shape):
     shape = deepcopy(shape)
     yield shape
     for i in range(len(shape[0])):
-        yield lshift(shape, i)[: len(shape) // 2] + rshift(shape, i)[
-            len(shape) // 2 :
-        ]
+        yield (
+            lshift(shape, i)[: len(shape) // 2] +
+            rshift(shape, i)[len(shape) // 2:]
+        )
 
 
 def all_zero(shape):
@@ -117,7 +118,6 @@ def scroll(shape, wrap=True):
 
 
 def fade(frames, target):
-    shape = deepcopy(shape)
     for i in range(1, frames + 1):
         yield min(1, 1.0 / i + target)
 
@@ -141,3 +141,19 @@ def draw(s, shape, palette=None, fade=1):
     shape = deepcopy(shape)
     for x, y, pix in to_pixerator(shape):
         s.set_at((x, y), pix)
+
+
+def alpha_blend(img, back):
+    # alpha*(img-back) + back
+    result = []
+    for i, pix in enumerate(img):
+        backpix = back[i]
+        r, g, b, a = pix
+        alpha = 255. / a
+        br, bg, bb, _ = backpix
+        result.append(
+            (alpha * (r - br) + br),
+            (alpha * (g - bg) + bg),
+            (alpha * (b - bb) + bb),
+        )
+    return result
