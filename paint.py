@@ -12,7 +12,7 @@ from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (bounce, center, dissolve, draw, dshift, lshift, rshift,
                   scroll, scroll_in, ushift)
 from shapes import (HEART, blackout, cloud1, cloudrain, flash_r, love, velo,
-                    wave)
+                    wave, doggo, doggo2)
 
 
 def signal_handler(sig, frame):
@@ -118,6 +118,14 @@ def movie():
             yield rshift(velo, int((i - FPS) // (FPS/6.)), wrap=True)
         else:
             yield love
+    factor = int(FPS / 3)
+    dog = [doggo] * factor + [doggo2] * factor
+    for i in range(FPS * 5):
+        pic = dog[i % len(dog)]
+        yield rshift(pic, i // int(FPS / 3), wrap=True)
+        
+
+
     for _ in range(FPS):
         yield center(HEART)
     flash_l = lshift(flash_r, 6)
