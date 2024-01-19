@@ -5,35 +5,11 @@ from time import sleep
 import pygame as pg
 from pygame import Rect, Surface
 import socket
-from nanoleafapi import (
-    RED,
-    ORANGE,
-    YELLOW,
-    GREEN,
-    LIGHT_BLUE,
-    BLUE,
-    PINK,
-    PURPLE,
-    WHITE,
-)
-
-BLACK = (0, 0, 0)
+from colors import BLACK, COLORS
 
 nanoleaf_host = '192.168.178.214'
 NANOLEAF_UDP_PORT = 60222
 
-COLORS = [
-    BLACK,
-    RED,
-    ORANGE,
-    YELLOW,
-    GREEN,
-    LIGHT_BLUE,
-    BLUE,
-    PINK,
-    PURPLE,
-    WHITE,
-]
 
 
 DEPTH = 32

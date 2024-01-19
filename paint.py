@@ -98,14 +98,15 @@ def save(win: Surface, out=True):
         pixels.append([
             win.get_at((x, y)) for x in range(_x)
         ])
-    result = ""
-    result += "\n".join(
-        "".join(f"{COLORS.index(p[:3])}" for p in row)
-        for row in pixels
-    )
     if out:
-        print(f'"""\n{result}\n"""')
-    return result
+        result = ""
+        result += "\n".join(
+            "".join(f"{COLORS.index(p[:3])}" for p in row)
+            for row in pixels
+        )
+        if out:
+            print(f'"""\n{result}\n"""')
+    return pixels
 
 
 def movie():
