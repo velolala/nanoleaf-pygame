@@ -109,16 +109,6 @@ def save(win: Surface, out=True):
 
 
 def movie():
-    factor = int(FPS / 6)
-    dog = [doggo] * factor + [doggo2] * factor
-    framescount = FPS * 12
-    target = 0.0
-    fadestep = (1. - target) / framescount
-    for i in range():
-        pic = dog[i % len(dog)]
-        fade = 1 - (i * fadestep)
-        yield rshift(pic, (i // factor) % WIDTH, wrap=True), fade
-
     for i in range(3 * FPS):
         if i % 12 < 2:
             yield blackout
@@ -128,10 +118,16 @@ def movie():
             yield rshift(velo, int((i - FPS) // (FPS/6.)), wrap=True)
         else:
             yield love
+    factor = int(FPS / 3)
+    dog = [doggo] * factor + [doggo2] * factor
+    for i in range(FPS * 5):
+        pic = dog[i % len(dog)]
+        yield rshift(pic, i // int(FPS / 3), wrap=True)
+        
+
 
     for _ in range(FPS):
         yield center(HEART)
-
     flash_l = lshift(flash_r, 6)
     for i in range(30):
         if i % 8 < 5:
@@ -142,7 +138,6 @@ def movie():
         chain(*repeat(list(scroll_in(HEART)), 2))
     )[:-9]:
         yield from repeat(frame, FPS // 5)
-
     for frame in dissolve(center(HEART)):
         yield from repeat(frame, FPS // 5)
     for frame in list(scroll_in(center(cloud1)))[:-11]:
@@ -245,10 +240,9 @@ while True:
                     # P(lay) something
                     _prev_shape = save(dual.simulator.window, out=False)
                     frames = movie()
-    fade = 1
     if frames is not None:
         try:
-            frame, fade = next(frames)
+            frame = next(frames)
             speed_x = speed_y = moved_x = moved_y = 0
         except StopIteration:
             frame = None
@@ -279,5 +273,5 @@ while True:
         shape = dshift(shape, - int(moved_y), wrap=True)
     moved_x -= int(moved_x)
     moved_y -= int(moved_y)
-    draw(win, shape, COLORS, fade=fade)
+    draw(win, shape, COLORS)
     dual.flip()
