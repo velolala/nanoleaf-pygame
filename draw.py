@@ -114,7 +114,18 @@ def scroll(shape, wrap=True):
         yield rshift(shape, i, wrap=wrap)
 
 
-def draw(s, shape, palette):
+def fade(frames, target):
+    for i in range(1, frames + 1):
+        yield min(1, 1. / i + target)
+
+
+def to_rgb(shape, palette, fade=1):
     for y, pix in enumerate(shape.strip().split("\n")):
         for x, i in enumerate(pix):
-            s.set_at((x, y), palette[int(i)])
+            r, g, b = palette[int(i)]
+            yield (x, y, (r * fade, g * fade, b * fade))
+
+
+def draw(s, shape, palette, fade=1):
+    for x, y, pix in to_rgb(shape, palette, fade=fade):
+        s.set_at((x, y), pix)
