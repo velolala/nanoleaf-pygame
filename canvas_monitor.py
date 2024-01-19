@@ -7,16 +7,14 @@ from pygame import Rect, Surface
 import socket
 from colors import BLACK, COLORS
 
-nanoleaf_host = '192.168.178.214'
+nanoleaf_host = "192.168.178.214"
 NANOLEAF_UDP_PORT = 60222
-
 
 
 DEPTH = 32
 
 
-class NanoleafDisplay():
-
+class NanoleafDisplay:
     def __init__(self, nl: Nanoleaf, hello=True):
         if nl is not None:
             self.nanoleaf_socket = socket.socket(
@@ -25,7 +23,7 @@ class NanoleafDisplay():
             self.nl = nl
 
             panels = self.nl.get_layout()["positionData"]
-            panels = sorted(panels, key=lambda p: (-p['y'], p['x']))
+            panels = sorted(panels, key=lambda p: (-p["y"], p["x"]))
             self.panel_ids = [p["panelId"] for p in panels]
             n_panels = len(self.panel_ids)
 
@@ -36,7 +34,9 @@ class NanoleafDisplay():
                 (
                     (len(set(p["x"] for p in panels))),
                     (len(set(p["y"] for p in panels))),
-                ), 0, DEPTH
+                ),
+                0,
+                DEPTH,
             )
             if hello:
                 self.hello()
@@ -48,7 +48,7 @@ class NanoleafDisplay():
                 for i in range(len(self.panel_ids))
             ]
             self.draw_frame(frame_data)
-            sleep(3. / len(self.panel_ids))
+            sleep(3.0 / len(self.panel_ids))
         self.draw_frame([BLACK for _ in range(len(self.panel_ids))])
 
     def close(self):
@@ -76,7 +76,8 @@ class NanoleafDisplay():
     def draw_frame(self, frame_data):
         transition = 0
         assert len(frame_data) == len(self.panel_ids), (
-            len(frame_data), len(self.panel_ids)
+            len(frame_data),
+            len(self.panel_ids),
         )
 
         send_data = b""
@@ -94,18 +95,14 @@ class NanoleafDisplay():
             send_data += white.to_bytes(1, "big")
             send_data += transition.to_bytes(2, "big")
 
-        self.nanoleaf_socket.sendto(
-            send_data, (self.nl.ip, NANOLEAF_UDP_PORT)
-        )
+        self.nanoleaf_socket.sendto(send_data, (self.nl.ip, NANOLEAF_UDP_PORT))
 
 
 class NanoleafDisplaySimulator(NanoleafDisplay):
-
     def __init__(self, geometry, scale=40, hello=True):
         width, height = geometry
         self._screen = pg.display.set_mode(
-            (width * scale, height * scale),
-            pg.DOUBLEBUF, DEPTH
+            (width * scale, height * scale), pg.DOUBLEBUF, DEPTH
         )
         self.window = Surface(geometry, 0, DEPTH)
         self.scale = scale
@@ -129,13 +126,10 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
             i = 0
             for y in range(self.window.get_height()):
                 for x in range(self.window.get_width()):
-                    self.window.set_at(
-                        (x, y),
-                        COLORS[(step + i) % len(COLORS)]
-                    )
+                    self.window.set_at((x, y), COLORS[(step + i) % len(COLORS)])
                     i += 1
             self.flip()
-            sleep(3. / prod(self.window.get_size()))
+            sleep(3.0 / prod(self.window.get_size()))
         self.window.fill(BLACK)
         self.flip()
 
@@ -143,8 +137,7 @@ class NanoleafDisplaySimulator(NanoleafDisplay):
         pg.quit()
 
 
-class NanoleafDual():
-
+class NanoleafDual:
     def __init__(self, nl, scale=120, hello=True):
         if nl is not None:
             self.canvas = NanoleafDisplay(nl, hello=hello)
@@ -154,9 +147,7 @@ class NanoleafDual():
             self.dimensions = (12, 6)
             self.canvas = None
         self.simulator = NanoleafDisplaySimulator(
-            self.dimensions,
-            scale=scale,
-            hello=hello
+            self.dimensions, scale=scale, hello=hello
         )
 
     def close(self):

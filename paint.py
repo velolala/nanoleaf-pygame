@@ -9,10 +9,30 @@ from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
 
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
-from draw import (bounce, center, dissolve, draw, dshift, lshift, rshift,
-                  scroll, scroll_in, ushift)
-from shapes import (HEART, blackout, cloud1, cloudrain, flash_r, love, velo,
-                    wave, doggo, doggo2)
+from draw import (
+    bounce,
+    center,
+    dissolve,
+    draw,
+    dshift,
+    lshift,
+    rshift,
+    scroll,
+    scroll_in,
+    ushift,
+)
+from shapes import (
+    HEART,
+    blackout,
+    cloud1,
+    cloudrain,
+    flash_r,
+    love,
+    velo,
+    wave,
+    doggo,
+    doggo2,
+)
 
 
 def signal_handler(sig, frame):
@@ -49,15 +69,15 @@ class MidiRecv:
         content = decode_message(msg)
         if content["control"] == 14:
             # max speed should be [-0.0555555, 0.05555555]
-            self.speed_x = -(63 - content["value"]) / 63 * .05
+            self.speed_x = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 15:
-            self.speed_y = -(63 - content["value"]) / 63 * .05
+            self.speed_y = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 0:
-            self.fill_r = content["value"] / 127. * 255
+            self.fill_r = content["value"] / 127.0 * 255
         if content["control"] == 1:
-            self.fill_g = content["value"] / 127. * 255
+            self.fill_g = content["value"] / 127.0 * 255
         if content["control"] == 2:
-            self.fill_b = content["value"] / 127. * 255
+            self.fill_b = content["value"] / 127.0 * 255
 
 
 midi = MidiRecv()
@@ -95,14 +115,11 @@ def save(win: Surface, out=True):
     _x, _y = win.get_size()
 
     for y in range(_y):
-        pixels.append([
-            win.get_at((x, y)) for x in range(_x)
-        ])
+        pixels.append([win.get_at((x, y)) for x in range(_x)])
     if out:
         result = ""
         result += "\n".join(
-            "".join(f"{COLORS.index(p[:3])}" for p in row)
-            for row in pixels
+            "".join(f"{COLORS.index(p[:3])}" for p in row) for row in pixels
         )
         if out:
             print(f'"""\n{result}\n"""')
@@ -116,7 +133,7 @@ def movie():
         elif i < FPS:
             yield velo
         elif i < 2 * FPS:
-            yield rshift(velo, int((i - FPS) // (FPS/6.)), wrap=True)
+            yield rshift(velo, int((i - FPS) // (FPS / 6.0)), wrap=True)
         else:
             yield love
     factor = int(FPS / 3)
@@ -124,8 +141,6 @@ def movie():
     for i in range(FPS * 5):
         pic = dog[i % len(dog)]
         yield rshift(pic, i // int(FPS / 3), wrap=True)
-        
-
 
     for _ in range(FPS):
         yield center(HEART)
@@ -135,9 +150,7 @@ def movie():
             yield flash_r
         else:
             yield flash_l
-    for frame in list(
-        chain(*repeat(list(scroll_in(HEART)), 2))
-    )[:-9]:
+    for frame in list(chain(*repeat(list(scroll_in(HEART)), 2)))[:-9]:
         yield from repeat(frame, FPS // 5)
     for frame in dissolve(center(HEART)):
         yield from repeat(frame, FPS // 5)
@@ -158,7 +171,7 @@ frame = frames = None
 _prev_shape = None
 _prev_acceleration = None
 FPS = 120
-ACCEL = .001
+ACCEL = 0.001
 while True:
     dt = clock.tick(FPS)
     for event in pg.event.get():
@@ -234,8 +247,7 @@ while True:
                         flags ^= pg.FULLSCREEN
                     print(flags)
                     pg.display.set_mode(
-                        dual.simulator._screen.get_size(),
-                        flags
+                        dual.simulator._screen.get_size(), flags
                     )
                 if k == pg.K_p:
                     # P(lay) something
@@ -271,7 +283,7 @@ while True:
     if moved_y >= 1:
         shape = ushift(shape, int(moved_y), wrap=True)
     elif moved_y <= -1:
-        shape = dshift(shape, - int(moved_y), wrap=True)
+        shape = dshift(shape, -int(moved_y), wrap=True)
     moved_x -= int(moved_x)
     moved_y -= int(moved_y)
     draw(win, shape, COLORS)

@@ -149,7 +149,7 @@ from draw import to_rgb
 import sys
 import inspect
 from colors import palette
-        
+
 for name, obj in inspect.getmembers(sys.modules[__name__]):
     if not name.startswith("_") and isinstance(obj, str):
         sys.modules[__name__].__dict__[name] = to_rgb(obj, palette)

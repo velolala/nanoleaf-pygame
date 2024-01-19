@@ -2,6 +2,7 @@ from itertools import chain, repeat
 
 EMPTY = (0, 0, 0)
 
+
 def rshift(shape, i, wrap=False):
     if i == 0:
         return shape
@@ -41,14 +42,16 @@ def ushift(shape, i, wrap=False):
 
 def dshift(shape, i, wrap=False):
     if wrap:
-        return shape[-i:] + shape[:len(shape) - i]
+        return shape[-i:] + shape[: len(shape) - i]
     return [[EMPTY] * len(shape[0]) for _ in range(i)] + shape[:-i]
 
 
 def dissolve(shape):
     yield shape
     for i in range(len(shape[0])):
-        yield lshift(shape, i)[:len(shape) // 2] + rshift(shape, i)[len(shape) // 2:]
+        yield lshift(shape, i)[: len(shape) // 2] + rshift(shape, i)[
+            len(shape) // 2 :
+        ]
 
 
 def all_zero(shape):
@@ -88,7 +91,8 @@ def scroll(shape, wrap=True):
 
 def fade(frames, target):
     for i in range(1, frames + 1):
-        yield min(1, 1. / i + target)
+        yield min(1, 1.0 / i + target)
+
 
 def to_rgb(shape, palette, fade=1):
     return [
@@ -96,10 +100,12 @@ def to_rgb(shape, palette, fade=1):
         for line in shape.strip().split("\n")
     ]
 
+
 def to_pixerator(shape):
     for y, line in enumerate(shape):
         for x, pix in enumerate(line):
             yield x, y, pix
+
 
 def draw(s, shape, palette=None, fade=1):
     for x, y, pix in to_pixerator(shape):
