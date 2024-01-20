@@ -3,6 +3,20 @@ from itertools import chain, repeat
 EMPTY = (0, 0, 0)
 
 
+def color_to_shape(shape, color):
+    return [[color for _ in line] for line in shape]
+
+
+def keyblend(shape, backdrop, key=EMPTY):
+    kr, kg, kb = key[:3]
+    for y, line in enumerate(shape):
+        for x, pix in enumerate(line):
+            sr, sg, sb = pix[:3]
+            if sr == kr and sg == kg and sb == kb:
+                shape[y][x] = backdrop[y][x]
+    return shape
+
+
 def rshift(shape, i, wrap=False):
     if i == 0:
         return shape

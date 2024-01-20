@@ -12,9 +12,11 @@ from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (
     bounce,
     center,
+    color_to_shape,
     dissolve,
     draw,
     dshift,
+    keyblend,
     lshift,
     rshift,
     scroll,
@@ -57,12 +59,13 @@ class MidiRecv:
         self.fill_r = 0
         self.fill_g = 0
         self.fill_b = 0
+        self.fill_set = False
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
 
     def get_fill(self):
-        return (self.fill_r, self.fill_g, self.fill_b)
+        return tuple(map(int, (self.fill_r, self.fill_g, self.fill_b)))
 
     def __call__(self, event, data=None):
         msg, what = event
@@ -74,10 +77,13 @@ class MidiRecv:
             self.speed_y = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 0:
             self.fill_r = content["value"] / 127.0 * 255
+            self.fill_set = True
         if content["control"] == 1:
             self.fill_g = content["value"] / 127.0 * 255
+            self.fill_set = True
         if content["control"] == 2:
             self.fill_b = content["value"] / 127.0 * 255
+            self.fill_set = True
 
 
 midi = MidiRecv()
@@ -118,7 +124,7 @@ def save(win: Surface, out=True):
         pixels.append([win.get_at((x, y)) for x in range(_x)])
     if out:
         result = ""
-        result += "\n".join(
+        result += "\n".join(  # if p != fill
             "".join(f"{COLORS.index(p[:3])}" for p in row) for row in pixels
         )
         if out:
@@ -170,8 +176,16 @@ moved_x = moved_y = 0
 frame = frames = None
 _prev_shape = None
 _prev_acceleration = None
-FPS = 120
+FPS = 60
 ACCEL = 0.001
+shape = save(win, out=False)
+
+fill = color_to_shape(shape, FILL)
+lastfill = fill
+
+assert shape is not None
+assert len(shape) == 6
+assert len(shape[0]) == 12
 while True:
     dt = clock.tick(FPS)
     for event in pg.event.get():
@@ -214,24 +228,24 @@ while True:
             else:
                 if k == pg.K_LEFT:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill(FILL)
+                    # win.fill(FILL)
                     draw(win, lshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_RIGHT:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill(FILL)
+                    # win.fill(FILL)
                     draw(win, rshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_UP:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill(FILL)
+                    # win.fill(FILL)
                     draw(win, ushift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_DOWN:
                     shape = save(dual.simulator.window, out=False)
-                    win.fill(FILL)
+                    # win.fill(FILL)
                     draw(win, dshift(shape, 1, wrap=True), COLORS)
                 if k == pg.K_c:
                     # C(enter)
                     shape = save(dual.simulator.window, out=False)
-                    win.fill(FILL)
+                    # win.fill(FILL)
                     draw(win, center(shape), COLORS)
                 if k == pg.K_b:
                     # B(lack)
@@ -265,10 +279,12 @@ while True:
                 speed_x, moved_x, speed_y, moved_y = _prev_acceleration
 
     if frame is not None:
-        shape = frame
+        fill = COLORS[0]
+        shape = frame[::]
+        midi.fill_set = True
     else:
         shape = save(dual.simulator.window, out=False)
-    win.fill(FILL)
+    # win.fill(FILL)
     speed_x, speed_y = midi.get_speed()
 
     move_x = speed_x * max(1, dt)
@@ -286,5 +302,13 @@ while True:
         shape = dshift(shape, -int(moved_y), wrap=True)
     moved_x -= int(moved_x)
     moved_y -= int(moved_y)
+    if midi.fill_set:
+        print(fill, lastfill, midi.fill_set)
+        lastfill = fill
+        fill = midi.get_fill()
+        print(fill, lastfill)
+        midi.fill_set = False
+        shape = keyblend(shape, color_to_shape(shape, fill), key=lastfill)
+
     draw(win, shape, COLORS)
     dual.flip()
