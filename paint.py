@@ -1,6 +1,7 @@
 import signal
 import sys
 from itertools import chain, repeat
+from copy import deepcopy
 
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
@@ -303,11 +304,10 @@ while True:
     moved_x -= int(moved_x)
     moved_y -= int(moved_y)
     if midi.fill_set:
-        print(fill, lastfill, midi.fill_set)
         lastfill = fill
         fill = midi.get_fill()
-        print(fill, lastfill)
         midi.fill_set = False
+        shape = deepcopy(shape)
         shape = keyblend(shape, color_to_shape(shape, fill), key=lastfill)
 
     draw(win, shape, COLORS)

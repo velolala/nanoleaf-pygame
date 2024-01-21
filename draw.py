@@ -1,13 +1,16 @@
 from itertools import chain, repeat
+from copy import deepcopy
 
 EMPTY = (0, 0, 0)
 
 
 def color_to_shape(shape, color):
+    shape = deepcopy(shape)
     return [[color for _ in line] for line in shape]
 
 
 def keyblend(shape, backdrop, key=EMPTY):
+    shape = deepcopy(shape)
     kr, kg, kb = key[:3]
     for y, line in enumerate(shape):
         for x, pix in enumerate(line):
@@ -18,6 +21,7 @@ def keyblend(shape, backdrop, key=EMPTY):
 
 
 def rshift(shape, i, wrap=False):
+    shape = deepcopy(shape)
     if i == 0:
         return shape
     if wrap:
@@ -27,6 +31,7 @@ def rshift(shape, i, wrap=False):
 
 
 def lshift(shape, i, wrap=False):
+    shape = deepcopy(shape)
     if wrap:
         return [line[i:] + line[:-i] for line in shape]
     else:
@@ -34,6 +39,7 @@ def lshift(shape, i, wrap=False):
 
 
 def bounce(shape, speed, wrap=False):
+    shape = deepcopy(shape)
     yield from repeat(lshift(shape, 1, wrap), speed)
     yield from repeat(shape, speed)
     yield from repeat(rshift(shape, 1, wrap), speed)
@@ -49,18 +55,21 @@ def bounce(shape, speed, wrap=False):
 
 
 def ushift(shape, i, wrap=False):
+    shape = deepcopy(shape)
     if wrap:
         return shape[i:] + shape[:i]
     return shape[i:] + [[EMPTY] * len(shape[0]) for _ in range(i)]
 
 
 def dshift(shape, i, wrap=False):
+    shape = deepcopy(shape)
     if wrap:
         return shape[-i:] + shape[: len(shape) - i]
     return [[EMPTY] * len(shape[0]) for _ in range(i)] + shape[:-i]
 
 
 def dissolve(shape):
+    shape = deepcopy(shape)
     yield shape
     for i in range(len(shape[0])):
         yield lshift(shape, i)[: len(shape) // 2] + rshift(shape, i)[
@@ -69,6 +78,7 @@ def dissolve(shape):
 
 
 def all_zero(shape):
+    shape = deepcopy(shape)
     count = 0
     while all(all(p == EMPTY for p in line[:count]) for line in shape):
         count += 1
@@ -76,6 +86,7 @@ def all_zero(shape):
 
 
 def center(shape):
+    shape = deepcopy(shape)
     pre = all_zero(shape)
     suf = all_zero([line[::-1] for line in shape])
     if suf == pre:
@@ -91,6 +102,7 @@ def center(shape):
 
 
 def scroll_in(shape):
+    shape = deepcopy(shape)
     for left in range(all_zero([line[::-1] for line in shape]), 0, -1):
         yield lshift(shape, left)
     for right in range(0, len(shape[0])):
@@ -98,17 +110,20 @@ def scroll_in(shape):
 
 
 def scroll(shape, wrap=True):
+    shape = deepcopy(shape)
     width = len(shape[0])
     for i in range(width):
         yield rshift(shape, i, wrap=wrap)
 
 
 def fade(frames, target):
+    shape = deepcopy(shape)
     for i in range(1, frames + 1):
         yield min(1, 1.0 / i + target)
 
 
 def to_rgb(shape, palette, fade=1):
+    shape = deepcopy(shape)
     return [
         [palette[int(pix)] for pix in line]
         for line in shape.strip().split("\n")
@@ -116,11 +131,13 @@ def to_rgb(shape, palette, fade=1):
 
 
 def to_pixerator(shape):
+    shape = deepcopy(shape)
     for y, line in enumerate(shape):
         for x, pix in enumerate(line):
             yield x, y, pix
 
 
 def draw(s, shape, palette=None, fade=1):
+    shape = deepcopy(shape)
     for x, y, pix in to_pixerator(shape):
         s.set_at((x, y), pix)
