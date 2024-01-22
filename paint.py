@@ -1,6 +1,6 @@
 import signal
 import sys
-from itertools import chain, repeat
+from itertools import chain, cycle, repeat
 from copy import deepcopy
 
 import pygame as pg
@@ -134,6 +134,36 @@ def save(win: Surface, out=True):
 
 
 def movie():
+    for f in _movie():
+        yield f[::]
+
+
+def _doggo():
+    factor = int(FPS / 3)
+    dog = [doggo] * factor + [doggo2] * factor
+    for i in range(FPS * 5):
+        pic = dog[i % len(dog)]
+        yield rshift(pic, i // int(FPS / 3), wrap=True)
+
+def _rain():
+    for frame in list(scroll_in(center(cloud1)))[:-11]:
+        yield from repeat(frame, FPS // 5)
+    for frame in chain(*repeat(cloudrain, 3)):
+        yield from repeat(frame, FPS // 10)
+
+def _raindog():
+    r = cycle(_rain())
+    d = _doggo()
+    try:
+        while True:
+            yield keyblend(next(r), next(d))
+    except StopIteration:
+        return
+
+
+def _movie():
+    for frame in _raindog():
+        yield frame
     for i in range(3 * FPS):
         if i % 12 < 2:
             yield blackout
@@ -143,11 +173,9 @@ def movie():
             yield rshift(velo, int((i - FPS) // (FPS / 6.0)), wrap=True)
         else:
             yield love
-    factor = int(FPS / 3)
-    dog = [doggo] * factor + [doggo2] * factor
-    for i in range(FPS * 5):
-        pic = dog[i % len(dog)]
-        yield rshift(pic, i // int(FPS / 3), wrap=True)
+
+    for frame in _doggo():
+        yield frame
 
     for _ in range(FPS):
         yield center(HEART)
@@ -161,10 +189,8 @@ def movie():
         yield from repeat(frame, FPS // 5)
     for frame in dissolve(center(HEART)):
         yield from repeat(frame, FPS // 5)
-    for frame in list(scroll_in(center(cloud1)))[:-11]:
-        yield from repeat(frame, FPS // 5)
-    for frame in chain(*repeat(cloudrain, 3)):
-        yield from repeat(frame, FPS // 10)
+    for frame in _rain():
+        yield frame
     for frame in chain(*repeat(list(scroll(wave)), FPS // 20)):
         yield from repeat(frame, FPS // 40)
     yield blackout
@@ -177,7 +203,7 @@ moved_x = moved_y = 0
 frame = frames = None
 _prev_shape = None
 _prev_acceleration = None
-FPS = 60
+FPS = 120
 ACCEL = 0.001
 shape = save(win, out=False)
 
