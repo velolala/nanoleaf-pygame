@@ -3,3 +3,6 @@ pygame-ce
 mido
 python-rtmidi
 pyaudio
+scipy
+sounddevice
+matplotlib

@@ -1,4 +1,16 @@
-from shapes import ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, ZERO, blackout
+from shapes import (
+    ONE,
+    TWO,
+    THREE,
+    FOUR,
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT,
+    NINE,
+    ZERO,
+    blackout,
+)
 from copy import deepcopy
 
 import datetime
@@ -6,6 +18,7 @@ import datetime
 from draw import center, lshift, rshift, keyblend
 
 NUMBERS = [ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE]
+
 
 def now(military=None):
     shape = deepcopy(blackout)
