@@ -12,11 +12,18 @@ def color_to_shape(shape, color):
 def hl_pixel(shape, x, y):
     shape = deepcopy(shape)
     r, g, b = shape[y][x]
-    shape[y][x] = (
-        min(255, int(r * 1.5) + 60),
-        min(255, int(g * 1.5) + 60),
-        min(255, int(b * 1.5) + 60),
-    )
+    if sum((r, g, b)) < 500:
+        shape[y][x] = (
+            min(255, int(r * 1.5) + 60),
+            min(255, int(g * 1.5) + 60),
+            min(255, int(b * 1.5) + 60),
+        )
+    else:
+        shape[y][x] = (
+            max(0, int(r * 0.5) + 20),
+            max(0, int(g * 0.5) + 20),
+            max(0, int(b * 0.5) + 20),
+        )
     return shape
 
 
