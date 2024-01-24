@@ -116,6 +116,7 @@ dual = NanoleafDual(nl, hello=False)
 display = dual.simulator
 
 win = dual.set_mode((12, 6), 0, DEPTH)
+display_clock = False
 
 
 def save(win: Surface, out=True):
@@ -132,6 +133,12 @@ def save(win: Surface, out=True):
         if out:
             print(f'"""\n{result}\n"""')
     return pixels
+
+
+def _clock():
+    while display_clock is True:
+        yield now()
+    yield blackout
 
 
 def movie():
@@ -242,6 +249,11 @@ while True:
         if event.type == pg.KEYDOWN and pg.key.get_focused():
             k, m = event.key, event.mod
             if m == pg.KMOD_LCTRL:
+                if k == pg.K_u:
+                    display_clock = not display_clock
+                    if display_clock:
+                        _prev_shape = save(dual.simulator.window, out=False)
+                        frames = _clock()
                 if k == pg.K_t:
                     _prev_shape = save(dual.simulator.window, out=False)
                     frames = counter()

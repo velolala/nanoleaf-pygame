@@ -9,6 +9,17 @@ def color_to_shape(shape, color):
     return [[color for _ in line] for line in shape]
 
 
+def hl_pixel(shape, x, y):
+    shape = deepcopy(shape)
+    r, g, b = shape[y][x]
+    shape[y][x] = (
+        min(255, int(r * 1.5) + 60),
+        min(255, int(g * 1.5) + 60),
+        min(255, int(b * 1.5) + 60),
+    )
+    return shape
+
+
 def keyblend(shape, backdrop, key=EMPTY):
     shape = deepcopy(shape)
     kr, kg, kb = key[:3]

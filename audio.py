@@ -10,6 +10,7 @@ DEVICE_NAME = "jack"
 
 RATE = 48000
 
+
 def main():
     micid = None
     for _id in range(pa.get_device_count()):
@@ -45,7 +46,6 @@ def main():
     pa.terminate()
 
 
-
 def inspectspec(data):
     """show fft plot data"""
 
@@ -66,6 +66,7 @@ def inspectspec(data):
     eps = 1e-8
     plt.plot(x, np.log10(B2[0 : int(n / 2)] + eps))
     plt.show()
+
 
 if __name__ == "__main__":
     main()
