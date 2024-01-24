@@ -8,6 +8,7 @@ from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
 from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
+from clock import now
 
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (
@@ -198,6 +199,17 @@ def _movie():
     yield blackout
 
 
+def counter():
+    length = FPS / 12
+    count = 0
+    while count < 9999 * length + length:
+        num = int(count // length)
+        frame = now(military=f"{num:04}")
+        count += 1
+        yield frame
+    yield blackout
+
+
 flags = dual.simulator._screen.get_flags()
 clock = pg.Clock()
 speed_x = speed_y = 0
@@ -230,6 +242,9 @@ while True:
         if event.type == pg.KEYDOWN and pg.key.get_focused():
             k, m = event.key, event.mod
             if m == pg.KMOD_LCTRL:
+                if k == pg.K_t:
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = counter()
                 if k == pg.K_c:
                     # Ctrl+C(lear)
                     win.fill(FILL)
@@ -255,6 +270,9 @@ while True:
                     _prev_acceleration = speed_x, moved_x, speed_y, moved_y
                     frames = bounce(shape, FPS // 20)
             else:
+                if k == pg.K_t:
+                    shape = now()
+                    draw(win, shape)
                 if k == pg.K_LEFT:
                     shape = save(dual.simulator.window, out=False)
                     # win.fill(FILL)
