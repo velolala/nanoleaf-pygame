@@ -145,11 +145,13 @@ def _doggo():
         pic = dog[i % len(dog)]
         yield rshift(pic, i // int(FPS / 3), wrap=True)
 
+
 def _rain():
     for frame in list(scroll_in(center(cloud1)))[:-11]:
         yield from repeat(frame, FPS // 5)
     for frame in chain(*repeat(cloudrain, 3)):
         yield from repeat(frame, FPS // 10)
+
 
 def _raindog():
     r = cycle(_rain())

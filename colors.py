@@ -38,10 +38,7 @@ for color in COLORS:
 
 def make_background(dimensions, color):
     x, y = dimensions
-    return [
-        [color for _x in range(x)]
-        for _y in range(y)
-    ]
+    return [[color for _x in range(x)] for _y in range(y)]
 
 
 BLUE_BACK = make_background((12, 6), RGBA(0, 0, 255, 255))

@@ -73,8 +73,8 @@ def dissolve(shape):
     yield shape
     for i in range(len(shape[0])):
         yield (
-            lshift(shape, i)[: len(shape) // 2] +
-            rshift(shape, i)[len(shape) // 2:]
+            lshift(shape, i)[: len(shape) // 2]
+            + rshift(shape, i)[len(shape) // 2 :]
         )
 
 
@@ -149,7 +149,7 @@ def alpha_blend(img, back):
     for i, pix in enumerate(img):
         backpix = back[i]
         r, g, b, a = pix
-        alpha = 255. / a
+        alpha = 255.0 / a
         br, bg, bb, _ = backpix
         result.append(
             (alpha * (r - br) + br),
