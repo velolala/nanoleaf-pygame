@@ -2,3 +2,4 @@ nanoleafapi
 pygame-ce
 mido
 python-rtmidi
+pyaudio
