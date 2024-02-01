@@ -6,6 +6,7 @@ from copy import deepcopy
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
+import rtmidi
 from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
 from clock import now
@@ -31,11 +32,13 @@ from shapes import (
     cloud1,
     cloudrain,
     flash_r,
+    grass,
     love,
     velo,
     wave,
     doggo,
     doggo2,
+    doggo3,
 )
 
 
@@ -92,11 +95,14 @@ midi = MidiRecv()
 
 
 def install_midi():
-    m_in, port_name = open_midiinput(1)  # FIXME: hardcoded port
-    print(port_name)
-    m_in.set_callback(midi)
-    m_in.ignore_types(timing=False)
-    return m_in
+    try:
+        m_in, port_name = open_midiinput(1)  # FIXME: hardcoded port
+        print(port_name)
+        m_in.set_callback(midi)
+        m_in.ignore_types(timing=False)
+        return m_in
+    except rtmidi.NoDevicesError:
+        return None
 
 
 def close_midi():
@@ -151,8 +157,30 @@ def _doggo():
     dog = [doggo] * factor + [doggo2] * factor
     for i in range(FPS * 5):
         pic = dog[i % len(dog)]
-        yield rshift(pic, i // int(FPS / 3), wrap=True)
+        yield ( 
+            keyblend(
+                rshift(pic, i // factor % 12, wrap=True),
+                grass
+            )
+        )
 
+
+def _doggo_jump():
+    factor = int(FPS / 3)
+    dog = [doggo] * factor + [doggo2] * factor
+    leap = [doggo2] * factor + [doggo3] * factor
+    for i in range(FPS * 10):
+        if (i // factor % 12) in range(1, 5):
+            pic = leap[i % len(dog)]
+            pic = ushift(pic, 1)
+        else:
+            pic = dog[i % len(dog)]
+        yield ( 
+            keyblend(
+                rshift(pic, i // factor % 12, wrap=True),
+                grass
+            )
+        )
 
 def _rain():
     for frame in list(scroll_in(center(cloud1)))[:-11]:
@@ -172,6 +200,7 @@ def _raindog():
 
 
 def _movie():
+    yield from _doggo_jump()
     for frame in _raindog():
         yield frame
     for i in range(3 * FPS):
