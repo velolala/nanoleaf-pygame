@@ -234,6 +234,13 @@ lastfill = fill
 assert shape is not None
 assert len(shape) == 6
 assert len(shape[0]) == 12
+
+
+display_clock = not display_clock
+if display_clock:
+    _prev_shape = save(dual.simulator.window, out=False)
+    frames = _clock()
+
 while True:
     dt = clock.tick(FPS)
     for event in pg.event.get():
