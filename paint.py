@@ -8,8 +8,9 @@ from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
 from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
-from clock import now
+from clock import now, fadeout
 
+from osci import SineOscillator
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
 from draw import (
     bounce,
@@ -142,8 +143,9 @@ def _clock():
 
 
 def movie():
+    osc = SineOscillator(FPS=FPS, freq=2, _min=0.3, _max=0.4)
     for f in _movie():
-        yield f[::]
+        yield fadeout(f[::], next(osc))
 
 
 def _doggo():
