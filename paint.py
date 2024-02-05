@@ -7,8 +7,9 @@ import random
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
-from rtmidi.midiutil import open_midiinput
+from rtmidi.midiutil import open_midiinput, open_midioutput
 from mido.messages.decode import decode_message
+from mido import Message
 from anim import RandomAnim
 from clock import now, fadeout
 import spec
@@ -105,12 +106,42 @@ def install_midi():
     return m_in
 
 
+def install_midi_out():
+    m_out, port_name = open_midioutput(1)  # FIXME: hardcoded port
+    print(port_name)
+    return m_out
+
+
 def close_midi():
     m_in.close_port()
+    m_out.close_port()
 
 
 pg.init()
 m_in = install_midi()
+
+m_out = install_midi_out()
+
+
+def init_midi_controller(out):
+    # RGB background
+    for control in range(3):
+        out.send_message(
+            Message(
+                "control_change", channel=12, control=control, value=0
+            ).bytes()
+        )
+    # speed X
+    out.send_message(
+        Message("control_change", channel=12, control=14, value=63).bytes()
+    )
+    # speed Y
+    out.send_message(
+        Message("control_change", channel=12, control=15, value=63).bytes()
+    )
+
+
+init_midi_controller(m_out)
 
 # display = NanoleafDisplaySimulator((12, 6), hello=False)
 nl = None
