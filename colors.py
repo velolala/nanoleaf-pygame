@@ -26,6 +26,9 @@ COLORS = [
     WHITE,
 ]
 palette = COLORS
+whites = [
+    (min(255, 2**i), min(255, 2**i), min(255, 2**i)) for i in range(10)
+]
 
 RGBA = namedtuple("RGBA", ["r", "g", "b", "a"])
 

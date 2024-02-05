@@ -9,6 +9,7 @@ from pygame import Surface
 from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
 from clock import now, fadeout
+import spec
 
 from osci import SineOscillator
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
@@ -24,6 +25,7 @@ from draw import (
     rshift,
     scroll,
     scroll_in,
+    to_rgb,
     ushift,
 )
 from shapes import (
@@ -38,6 +40,7 @@ from shapes import (
     doggo,
     doggo2,
 )
+from colors import whites
 
 
 def signal_handler(sig, frame):
@@ -140,6 +143,23 @@ def _clock():
     while display_clock is True:
         yield now()
     yield blackout
+
+
+def _spec():
+    gen = spec.main()
+    while True:
+        frame = next(gen) or frame
+        if sum(int(c) for c in frame.strip().split("\n")[-1]) > 9 * 8:
+            yield from bounce(to_rgb(frame, whites), 5)
+        yield keyblend(
+            to_rgb(frame, whites),
+            color_to_shape(
+                [[whites[0] for _ in range(12)] for _ in range(6)],
+                midi.get_fill(),
+            ),
+            key=whites[0],
+        )
+    yield StopIteration
 
 
 def movie():
@@ -318,6 +338,9 @@ while True:
                 if k == pg.K_b:
                     # B(lack)
                     color = COLORS[0]
+                if k == pg.K_s:
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = _spec()
                 if k == pg.K_n:
                     # N(ext color)
                     color = COLORS[(COLORS.index(color) + 1) % len(COLORS)]
@@ -346,7 +369,7 @@ while True:
             if _prev_acceleration is not None:
                 speed_x, moved_x, speed_y, moved_y = _prev_acceleration
 
-    if frame is not None:
+    if frame is not None and frame is not StopIteration:
         fill = COLORS[0]
         shape = frame[::]
         midi.fill_set = True
