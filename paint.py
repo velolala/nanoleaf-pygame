@@ -2,6 +2,7 @@ import signal
 import sys
 from itertools import chain, cycle, repeat
 from copy import deepcopy
+import random
 
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
@@ -148,17 +149,28 @@ def _clock():
 
 def _spec():
     gen = spec.main()
+    count = 0
+    moves = cycle((rshift, lshift))
+    move = next(moves)
     while True:
+        count += 1
+        if random.random() > 0.9:
+            move = next(moves)
+            count = 0
         frame = next(gen) or frame
         if sum(int(c) for c in frame.strip().split("\n")[-1]) > 9 * 8:
             yield from bounce(to_rgb(frame, whites), 5)
-        yield keyblend(
-            to_rgb(frame, whites),
-            color_to_shape(
-                [[whites[0] for _ in range(12)] for _ in range(6)],
-                midi.get_fill(),
+        yield move(
+            keyblend(
+                to_rgb(frame, whites),
+                color_to_shape(
+                    [[whites[0] for _ in range(12)] for _ in range(6)],
+                    midi.get_fill(),
+                ),
+                key=whites[0],
             ),
-            key=whites[0],
+            int(count / 8) % 12,
+            wrap=True,
         )
     yield StopIteration
 
