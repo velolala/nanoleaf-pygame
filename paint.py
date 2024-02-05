@@ -8,6 +8,7 @@ from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Surface
 from rtmidi.midiutil import open_midiinput
 from mido.messages.decode import decode_message
+from anim import RandomAnim
 from clock import now, fadeout
 import spec
 
@@ -354,6 +355,9 @@ while True:
                     pg.display.set_mode(
                         dual.simulator._screen.get_size(), flags
                     )
+                if k == pg.K_r:
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = RandomAnim(FPS)
                 if k == pg.K_p:
                     # P(lay) something
                     _prev_shape = save(dual.simulator.window, out=False)
