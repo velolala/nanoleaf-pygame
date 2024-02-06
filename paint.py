@@ -3,6 +3,7 @@ import sys
 from itertools import chain, cycle, repeat
 from copy import deepcopy
 import random
+from queue import Queue
 
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
@@ -69,6 +70,8 @@ class MidiRecv:
         self.fill_g = 0
         self.fill_b = 0
         self.fill_set = False
+        self._gain = Queue(1)
+        self._gain.put(1500)
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
@@ -79,6 +82,7 @@ class MidiRecv:
     def __call__(self, event, data=None):
         msg, what = event
         content = decode_message(msg)
+        # R/G/B
         if content["control"] == 0:
             self.fill_r = content["value"] / 127.0 * 255
             self.fill_set = True
@@ -88,6 +92,10 @@ class MidiRecv:
         if content["control"] == 2:
             self.fill_b = content["value"] / 127.0 * 255
             self.fill_set = True
+        # gain
+        if content["control"] == 3:
+            self._gain.put(content["value"] * 50)
+        # speed X/Y
         if content["control"] == 14:
             # max speed should be [-0.0555555, 0.05555555]
             self.speed_x = -(63 - content["value"]) / 63 * 0.05
@@ -131,6 +139,10 @@ def init_midi_controller(out):
                 "control_change", channel=12, control=control, value=0
             ).bytes()
         )
+    # gain
+    out.send_message(
+        Message("control_change", channel=12, control=3, value=30).bytes()
+    )
     # speed X
     out.send_message(
         Message("control_change", channel=12, control=14, value=63).bytes()
@@ -179,19 +191,16 @@ def _clock():
 
 
 def _spec():
-    gen = spec.main()
+    gen = spec.main(midi._gain)
     count = 0
-    moves = cycle((rshift, lshift))
-    move = next(moves)
+    move = rshift
     while True:
-        count += midi.speed_x
+        count += abs(midi.speed_x) * 10
         if midi.speed_x < 0:
             move = lshift
         else:
             move = rshift
         frame = next(gen) or frame
-        if sum(int(c) for c in frame.strip().split("\n")[-1]) > 9 * 8:
-            yield from bounce(to_rgb(frame, whites), 5)
         yield move(
             keyblend(
                 to_rgb(frame, whites),

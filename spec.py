@@ -9,26 +9,13 @@ import numpy as np
 import sounddevice as sd
 from queue import Queue, Empty, Full
 
-device = 0
+device = "USB PnP"
 
 block_duration = 22  # block size ms
-gain = 1250
 
 octaves = 4
 low, high = 55, 55 * 2**octaves
 columns = 12 * octaves
-
-# Create a nice output gradient using ANSI escape sequences.
-# Stolen from https://gist.github.com/maurisvh/df919538bcef391bc89f
-colors = 30, 34, 35, 91, 93, 97
-chars = " :%#\t#%:"
-gradient = []
-for bg, fg in zip(colors, colors[1:]):
-    for char in chars:
-        if char == "\t":
-            bg, fg = fg, bg
-        else:
-            gradient.append(f"\x1b[{fg};{bg + 10}m{char}")
 
 samplerate = sd.query_devices(device, "input")["default_samplerate"]
 
@@ -37,11 +24,22 @@ fftsize = math.ceil(samplerate / delta_f)
 low_bin = math.floor(low / delta_f)
 
 
-def generate_callback(qu: Queue):
+def generate_callback(qu: Queue, _gain: Queue):
+    gain = 1250
+    try:
+        gain = _gain.get_nowait()
+    except Empty:
+        pass
+
     def callback(indata, frames, time, status):
+        nonlocal gain
         if status:
             text = " " + str(status) + " "
             print(text)
+        try:
+            gain = _gain.get_nowait()
+        except Empty:
+            pass
         if any(indata):
             magnitude = np.abs(np.fft.rfft(indata[:, 0], n=fftsize))
             magnitude *= gain / fftsize
@@ -56,10 +54,6 @@ def generate_callback(qu: Queue):
                 for i, val in enumerate(subline):
                     __line[i] += val
             _line = (str(min(9, val)) for val in __line)
-            # line = (
-            #     gradient[int(np.clip(x, 0, 1) * (len(gradient) - 1))]
-            #     for x in magnitude[low_bin : low_bin + columns]
-            # )
             try:
                 qu.put_nowait("".join(_line))
             except Full:
@@ -70,13 +64,13 @@ def generate_callback(qu: Queue):
     return callback
 
 
-def main():
+def main(gain):
     qu = Queue(60)
     out = deque(maxlen=6)
     with sd.InputStream(
         device=device,
         channels=1,
-        callback=generate_callback(qu),
+        callback=generate_callback(qu, _gain=gain),
         blocksize=int(samplerate * block_duration / 1000),
         samplerate=samplerate,
     ):
