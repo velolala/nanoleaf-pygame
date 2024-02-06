@@ -191,7 +191,7 @@ def _clock():
 
 
 def _spec():
-    gen = spec.main(midi._gain)
+    gen = spec.main(midi._gain, smoothing=FPS // 10)
     count = 0
     move = rshift
     while True:

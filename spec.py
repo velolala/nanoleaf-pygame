@@ -9,6 +9,8 @@ import numpy as np
 import sounddevice as sd
 from queue import Queue, Empty, Full
 
+HEIGHT = 6
+
 device = "USB PnP"
 
 block_duration = 22  # block size ms
@@ -64,9 +66,19 @@ def generate_callback(qu: Queue, _gain: Queue):
     return callback
 
 
-def main(gain):
+def smooth(out, smoothing):
+    x = np.array([[int(_) for _ in line] for line in out])
+    result = []
+    for a in np.array_split(x, HEIGHT):
+        y = np.clip((np.cumsum(a, axis=0) / smoothing).astype(np.int8), 0, 9)
+        if len(y):
+            result.append(y[-1])
+    return "\n".join("".join(str(_) for _ in row) for row in result)
+
+
+def main(gain, smoothing=1):
     qu = Queue(60)
-    out = deque(maxlen=6)
+    out = deque(maxlen=HEIGHT * smoothing)
     with sd.InputStream(
         device=device,
         channels=1,
@@ -82,7 +94,8 @@ def main(gain):
             except Empty:
                 p = None
             if p is not None:
-                yield "\n".join(out).strip("\n")
+                result = smooth(out, smoothing=smoothing)
+                yield result
 
 
 if __name__ == "__main__":
