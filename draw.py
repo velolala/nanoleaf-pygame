@@ -51,7 +51,7 @@ def rshift(shape, i, wrap=False):
 def lshift(shape, i, wrap=False):
     shape = deepcopy(shape)
     if wrap:
-        return [line[i:] + line[:-i] for line in shape]
+        return [line[i:] + line[:i] for line in shape]
     else:
         return [line[i:] + [EMPTY] * i for line in shape]
 
