@@ -66,12 +66,12 @@ class MidiRecv:
         self.controller_state = dict()
         self.speed_x = 0
         self.speed_y = 0
-        self.fill_r = 0
-        self.fill_g = 0
-        self.fill_b = 0
+        self.fill_r = 9
+        self.fill_g = 9
+        self.fill_b = 9
         self.fill_set = False
         self._gain = Queue(1)
-        self._gain.put(1500)
+        self._gain.put(3000)
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
@@ -136,12 +136,12 @@ def init_midi_controller(out):
     for control in range(3):
         out.send_message(
             Message(
-                "control_change", channel=12, control=control, value=0
+                "control_change", channel=12, control=control, value=9
             ).bytes()
         )
     # gain
     out.send_message(
-        Message("control_change", channel=12, control=3, value=30).bytes()
+        Message("control_change", channel=12, control=3, value=3000 // 50).bytes()
     )
     # speed X
     out.send_message(
@@ -313,9 +313,7 @@ assert len(shape[0]) == 12
 
 
 display_clock = not display_clock
-if display_clock:
-    _prev_shape = save(dual.simulator.window, out=False)
-    frames = _clock()
+frames = _spec()
 
 while True:
     dt = clock.tick(FPS)
