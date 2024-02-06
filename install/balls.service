@@ -1,0 +1,10 @@
+[Unit]
+Description=Start 'balls'.
+
+[Service]
+Type=simple
+ExecStart=/home/elsa/Projects/nanoleaf-pygame/.venv/bin/python /home/elsa/Projects/nanoleaf-pygame/paint.py
+
+[Install]
+After=network-online.target
+WantedBy=network-online.target multi-user.target

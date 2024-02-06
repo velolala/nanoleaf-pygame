@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Exec=systemctl --user start balls
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=120
+Name[en_US]=balls
+Name=balls
+Comment[en_US]=
+Comment=
