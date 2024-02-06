@@ -79,11 +79,6 @@ class MidiRecv:
     def __call__(self, event, data=None):
         msg, what = event
         content = decode_message(msg)
-        if content["control"] == 14:
-            # max speed should be [-0.0555555, 0.05555555]
-            self.speed_x = -(63 - content["value"]) / 63 * 0.05
-        if content["control"] == 15:
-            self.speed_y = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 0:
             self.fill_r = content["value"] / 127.0 * 255
             self.fill_set = True
@@ -93,6 +88,11 @@ class MidiRecv:
         if content["control"] == 2:
             self.fill_b = content["value"] / 127.0 * 255
             self.fill_set = True
+        if content["control"] == 14:
+            # max speed should be [-0.0555555, 0.05555555]
+            self.speed_x = -(63 - content["value"]) / 63 * 0.05
+        if content["control"] == 15:
+            self.speed_y = -(63 - content["value"]) / 63 * 0.05
 
 
 midi = MidiRecv()
