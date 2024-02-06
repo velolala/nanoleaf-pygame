@@ -184,10 +184,11 @@ def _spec():
     moves = cycle((rshift, lshift))
     move = next(moves)
     while True:
-        count += 1
-        if random.random() > 0.9:
-            move = next(moves)
-            count = 0
+        count += midi.speed_x
+        if midi.speed_x < 0:
+            move = lshift
+        else:
+            move = rshift
         frame = next(gen) or frame
         if sum(int(c) for c in frame.strip().split("\n")[-1]) > 9 * 8:
             yield from bounce(to_rgb(frame, whites), 5)
