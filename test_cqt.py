@@ -60,6 +60,6 @@ if __name__ == "__main__":
             print(frames)
             y = get_data(frames)
             calc_cqt(y)
-        except (librosa.util.exceptions.ParameterError) as ex:
+        except librosa.util.exceptions.ParameterError as ex:
             print(ex)
         frames *= 2

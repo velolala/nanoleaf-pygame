@@ -141,7 +141,9 @@ def init_midi_controller(out):
         )
     # gain
     out.send_message(
-        Message("control_change", channel=12, control=3, value=3000 // 50).bytes()
+        Message(
+            "control_change", channel=12, control=3, value=3000 // 50
+        ).bytes()
     )
     # speed X
     out.send_message(
