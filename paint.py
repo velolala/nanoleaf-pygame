@@ -14,6 +14,7 @@ from mido import Message
 from anim import RandomAnim
 from clock import now, fadeout
 import spec
+import cqt
 
 from osci import SineOscillator
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
@@ -192,6 +193,32 @@ def _clock():
     yield blackout
 
 
+def _cqt():
+    gen = cqt.main()
+    count = 0
+    move = rshift
+    while True:
+        count += abs(midi.speed_x) * 10
+        if midi.speed_x < 0:
+            move = lshift
+        else:
+            move = rshift
+        frame = next(gen) or frame
+        yield move(
+            keyblend(
+                to_rgb(frame, whites),
+                color_to_shape(
+                    [[whites[0] for _ in range(12)] for _ in range(6)],
+                    midi.get_fill(),
+                ),
+                key=whites[0],
+            ),
+            int(count / 8) % 12,
+            wrap=True,
+        )
+    yield StopIteration
+
+
 def _spec():
     gen = spec.main(midi._gain, smoothing=FPS // 10)
     count = 0
@@ -315,7 +342,7 @@ assert len(shape[0]) == 12
 
 
 display_clock = not display_clock
-frames = _spec()
+frames = _cqt()
 
 while True:
     dt = clock.tick(FPS)
