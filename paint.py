@@ -194,7 +194,7 @@ def _clock():
 
 
 def _cqt():
-    gen = cqt.main()
+    gen = cqt.main(midi._gain)
     count = 0
     move = rshift
     while True:
@@ -419,6 +419,9 @@ while True:
                 if k == pg.K_b:
                     # B(lack)
                     color = COLORS[0]
+                if k == pg.K_q:
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = _cqt()
                 if k == pg.K_s:
                     _prev_shape = save(dual.simulator.window, out=False)
                     frames = _spec()
