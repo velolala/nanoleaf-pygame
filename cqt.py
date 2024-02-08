@@ -7,11 +7,10 @@ from queue import Empty, Queue
 
 sr_44 = 44100
 sr_22 = 22500
-block_duration = 80
+block_duration = 21
 device = "USB"
 
 FMIN = librosa.note_to_hz("C1")
-GAIN = 25
 
 
 def get_data():
@@ -29,7 +28,7 @@ def get_data():
 def generate_callback(qu: Queue, _gain: Queue):
     try:
         gain = _gain.get_nowait()
-        gain /= 40
+        gain /= 10
     except Empty:
         gain = 15
 
@@ -40,12 +39,12 @@ def generate_callback(qu: Queue, _gain: Queue):
             print(text)
         try:
             gain = _gain.get_nowait()
-            gain /= 40
+            gain /= 10
         except Empty:
             pass
         if any(indata):
             indata.shape = (frames,)
-            qu.put_nowait(calc_cqt(indata, gain))
+            qu.put_nowait((indata, gain))
 
     return callback
 
@@ -96,14 +95,23 @@ def main(gain=15):
         blocksize=int(sr_44 * block_duration / 1000),
         samplerate=sr_44,
     ):
+        data = np.empty((0, 0))
         while True:
+            time.sleep(0.1)
             p = None
-            try:
-                p = qu.get()
-            except Empty:
-                p = None
-            if p is not None:
-                yield p
+            while not qu.empty():
+                try:
+                    p = qu.get()
+                    indata, gain = p
+                    data = np.append(data, indata)
+                except Empty:
+                    pass
+            if len(data) > 2000:
+                # discard some
+                print(len(data))
+                shape = calc_cqt(data, gain)
+                data = data[-5000:]
+                yield shape
 
 
 if __name__ == "__main__":
