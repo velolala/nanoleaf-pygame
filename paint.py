@@ -61,6 +61,7 @@ color = COLORS[1]
 WIDTH, HEIGHT = (12, 6)
 FILL = COLORS[0]
 
+
 class MidiRecv:
     def __init__(self):
         self.controller_state = dict()
@@ -257,7 +258,9 @@ def _spec():
         )
     yield StopIteration
 
+
 sound2lights = cycle((_spec, _cqt))
+
 
 def movie():
     osc = SineOscillator(FPS=FPS, freq=2, _min=0.3, _max=0.4)
