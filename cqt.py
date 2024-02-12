@@ -5,32 +5,21 @@ import librosa
 import numpy as np
 from queue import Empty, Queue
 
-sr_44 = 44100
+sr_44 = 48000
 sr_22 = 22500
-block_duration = 21
-device = "USB"
+block_duration = 24
+device = "USB Audio Device:"
+window = 16000 * 1  # // 1
 
 FMIN = librosa.note_to_hz("C1")
-
-
-def get_data():
-    with sd.InputStream(
-        device=device,
-        samplerate=sr_44,
-        blocksize=int(sr_44 * block_duration / 1000),
-        callback=callback,
-        channels=1,
-    ) as stream:
-        time.sleep(20)
-        return 0
 
 
 def generate_callback(qu: Queue, _gain: Queue):
     try:
         gain = _gain.get_nowait()
-        gain /= 10
+        gain *= 2
     except Empty:
-        gain = 15
+        gain = 100
 
     def callback(indata, frames, time, status):
         nonlocal gain
@@ -39,7 +28,7 @@ def generate_callback(qu: Queue, _gain: Queue):
             print(text)
         try:
             gain = _gain.get_nowait()
-            gain /= 10
+            gain *= 2
         except Empty:
             pass
         if any(indata):
@@ -69,7 +58,19 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     #    ),
     # )
     C = C_harm
-    C = np.average(C, axis=1)
+    samples = len(C[0])
+    displaywindow = 10
+
+    if samples >= displaywindow:
+        C = np.average(np.rot90(np.rot90(C)[:displaywindow], k=-1), axis=1)
+    else:
+        C = np.average(C, axis=1)
+    maxis = librosa.util.localmax(C)
+    mul = np.array([1.9 if maxis[_] else 0.9 for _ in range(len(maxis))])
+    before = C[0]
+    C = mul * C
+    after = C[0]
+    # print(maxis, len(C), before, after)
     # P = C / np.linalg.norm(C)
     # P = P * (1 / np.max(P))
     # gain = GAIN
@@ -108,22 +109,7 @@ def main(gain=15):
                     pass
             if len(data) > 2000:
                 # discard some
-                print(len(data))
+                # print(len(data))
                 shape = calc_cqt(data, gain)
-                data = data[-5000:]
+                data = data[-window:]
                 yield shape
-
-
-if __name__ == "__main__":
-    # calc_cqt(librosa.load(librosa.ex("trumpet"))[0], sr=sr_22)
-    import time
-
-    while True:
-        try:
-            start = time.monotonic()
-            y = get_data()
-            print("d", time.monotonic() - start)
-            calc_cqt(y)
-
-        except librosa.util.exceptions.ParameterError as ex:
-            print(ex)

@@ -11,7 +11,7 @@ from queue import Queue, Empty, Full
 
 HEIGHT = 6
 
-device = "USB PnP"
+device = "USB Audio Device:"
 
 block_duration = 22  # block size ms
 
@@ -27,9 +27,10 @@ low_bin = math.floor(low / delta_f)
 
 
 def generate_callback(qu: Queue, _gain: Queue):
-    gain = 1250
+    gain = 5000
     try:
         gain = _gain.get_nowait()
+        gain *= 100
     except Empty:
         pass
 
@@ -40,6 +41,7 @@ def generate_callback(qu: Queue, _gain: Queue):
             print(text)
         try:
             gain = _gain.get_nowait()
+            gain *= 100
         except Empty:
             pass
         if any(indata):

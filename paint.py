@@ -61,7 +61,6 @@ color = COLORS[1]
 WIDTH, HEIGHT = (12, 6)
 FILL = COLORS[0]
 
-
 class MidiRecv:
     def __init__(self):
         self.controller_state = dict()
@@ -72,7 +71,8 @@ class MidiRecv:
         self.fill_b = 9
         self.fill_set = False
         self._gain = Queue(1)
-        self._gain.put(3000)
+        self._gain.put(50)
+        self.scene = 0
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
@@ -95,13 +95,28 @@ class MidiRecv:
             self.fill_set = True
         # gain
         if content["control"] == 3:
-            self._gain.put(content["value"] * 50)
+            self._gain.put(content["value"])
         # speed X/Y
         if content["control"] == 14:
             # max speed should be [-0.0555555, 0.05555555]
             self.speed_x = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 15:
             self.speed_y = -(63 - content["value"]) / 63 * 0.05
+
+        if content["control"] == 28 and content["value"] == 0:
+            try:
+                newevent = pg.event.Event(
+                    pg.KEYDOWN,
+                    unicode="z",
+                    key=pg.K_z,
+                    mod=pg.KMOD_NONE,
+                )
+                pg.event.post(newevent)  # add the event to the queue
+            except Exception as ex:
+                print(ex)
+
+    def get_scene_change(self):
+        pass
 
 
 midi = MidiRecv()
@@ -142,9 +157,7 @@ def init_midi_controller(out):
         )
     # gain
     out.send_message(
-        Message(
-            "control_change", channel=12, control=3, value=3000 // 50
-        ).bytes()
+        Message("control_change", channel=12, control=3, value=50).bytes()
     )
     # speed X
     out.send_message(
@@ -244,6 +257,7 @@ def _spec():
         )
     yield StopIteration
 
+sound2lights = cycle((_spec, _cqt))
 
 def movie():
     osc = SineOscillator(FPS=FPS, freq=2, _min=0.3, _max=0.4)
@@ -425,6 +439,9 @@ while True:
                 if k == pg.K_s:
                     _prev_shape = save(dual.simulator.window, out=False)
                     frames = _spec()
+                if k == pg.K_z:
+                    _prev_shape = save(dual.simulator.window, out=False)
+                    frames = next(sound2lights)()
                 if k == pg.K_n:
                     # N(ext color)
                     color = COLORS[(COLORS.index(color) + 1) % len(COLORS)]
