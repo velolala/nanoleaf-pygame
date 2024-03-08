@@ -7,7 +7,7 @@ from queue import Queue
 
 import pygame as pg
 from nanoleafapi.nanoleaf import NanoleafConnectionError
-from pygame import Surface
+from pygame import Color, Surface
 from rtmidi.midiutil import open_midiinput, open_midioutput
 from mido.messages.decode import decode_message
 from mido import Message
@@ -64,7 +64,8 @@ FILL = COLORS[0]
 
 
 class MidiRecv:
-    def __init__(self):
+    def __init__(self, out):
+        self.out = out
         self.controller_state = dict()
         self.speed_x = 0
         self.speed_y = 0
@@ -77,6 +78,7 @@ class MidiRecv:
         self.scene = 0
         self.swap_h = False
         self.swap_v = False
+        self.update_color_knobs("rgb")
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
@@ -84,22 +86,74 @@ class MidiRecv:
     def get_fill(self):
         return tuple(map(int, (self.fill_r, self.fill_g, self.fill_b)))
 
+    def _rgb_from_hsl(self):
+        c = Color(0, 0, 0)
+        c.hsla = (self.fill_h, self.fill_s, self.fill_l)
+        self.fill_r, self.fill_g, self.fill_b, _ = c
+
+    def _hsl_from_rgb(self):
+        self.fill_h, self.fill_s, self.fill_l, _ = Color(
+            self.fill_r, self.fill_g, self.fill_b
+        ).hsla
+
+    def update_color_knobs(self, origin):
+        updates = []
+        if origin == "rgb":
+            self._hsl_from_rgb()
+            updates = [
+                (5, self.fill_h, 360),
+                (6, self.fill_s, 100),
+                (7, self.fill_l, 100),
+            ]
+        if origin == "hsl":
+            self._rgb_from_hsl()
+            updates = [
+                (0, self.fill_r, 255),
+                (1, self.fill_g, 255),
+                (2, self.fill_b, 255),
+            ]
+        for control, value, range in updates:
+            self.out.send_message(
+                Message(
+                    "control_change",
+                    channel=12,
+                    control=control,
+                    value=int(value / range * 127. + 0.5),
+                ).bytes()
+            )
+
     def __call__(self, event, data=None):
         msg, what = event
         content = decode_message(msg)
         # R/G/B
         if content["control"] == 0:
             self.fill_r = content["value"] / 127.0 * 255
+            self.update_color_knobs("rgb")
             self.fill_set = True
         if content["control"] == 1:
             self.fill_g = content["value"] / 127.0 * 255
+            self.update_color_knobs("rgb")
             self.fill_set = True
         if content["control"] == 2:
             self.fill_b = content["value"] / 127.0 * 255
+            self.update_color_knobs("rgb")
             self.fill_set = True
         # gain
         if content["control"] == 3:
             self._gain.put(content["value"])
+        # H/S/L
+        if content["control"] == 5:
+            self.fill_h = content["value"] / 127.0 * 360
+            self.update_color_knobs("hsl")
+            self.fill_set = True
+        if content["control"] == 6:
+            self.fill_s = content["value"] / 127.0 * 100
+            self.update_color_knobs("hsl")
+            self.fill_set = True
+        if content["control"] == 7:
+            self.fill_l = content["value"] / 127.0 * 100
+            self.update_color_knobs("hsl")
+            self.fill_set = True
         # speed X/Y
         if content["control"] == 14:
             # max speed should be [-0.0555555, 0.05555555]
@@ -129,13 +183,10 @@ class MidiRecv:
         pass
 
 
-midi = MidiRecv()
-
-
-def install_midi():
+def install_midi(callback):
     m_in, port_name = open_midiinput(1)  # FIXME: hardcoded port
     print(port_name)
-    m_in.set_callback(midi)
+    m_in.set_callback(callback)
     m_in.ignore_types(timing=False)
     return m_in
 
@@ -149,12 +200,6 @@ def install_midi_out():
 def close_midi():
     m_in.close_port()
     m_out.close_port()
-
-
-pg.init()
-m_in = install_midi()
-
-m_out = install_midi_out()
 
 
 def init_midi_controller(out):
@@ -178,6 +223,11 @@ def init_midi_controller(out):
         Message("control_change", channel=12, control=15, value=63).bytes()
     )
 
+
+pg.init()
+m_out = install_midi_out()
+midi = MidiRecv(m_out)
+m_in = install_midi(midi)
 
 init_midi_controller(m_out)
 
