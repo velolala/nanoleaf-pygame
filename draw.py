@@ -56,6 +56,15 @@ def lshift(shape, i, wrap=False):
         return [line[i:] + [EMPTY] * i for line in shape]
 
 
+def swap(shape, h=False, v=False):
+    shape = deepcopy(shape)
+    if h is True:
+        shape = [list(reversed(line)) for line in shape]
+    if v is True:
+        shape = list(reversed(shape))
+    return shape
+
+
 def bounce(shape, speed, wrap=False):
     shape = deepcopy(shape)
     yield from repeat(lshift(shape, 1, wrap), speed)

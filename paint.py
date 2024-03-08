@@ -30,6 +30,7 @@ from draw import (
     rshift,
     scroll,
     scroll_in,
+    swap,
     to_rgb,
     ushift,
 )
@@ -74,6 +75,8 @@ class MidiRecv:
         self._gain = Queue(1)
         self._gain.put(50)
         self.scene = 0
+        self.swap_h = False
+        self.swap_v = False
 
     def get_speed(self):
         return (self.speed_x, self.speed_y)
@@ -103,6 +106,12 @@ class MidiRecv:
             self.speed_x = -(63 - content["value"]) / 63 * 0.05
         if content["control"] == 15:
             self.speed_y = -(63 - content["value"]) / 63 * 0.05
+
+        if content["control"] == 20 and content["value"] == 0:
+            self.swap_h = not self.swap_h
+
+        if content["control"] == 24 and content["value"] == 0:
+            self.swap_v = not self.swap_v
 
         if content["control"] == 28 and content["value"] == 0:
             try:
@@ -506,6 +515,7 @@ while True:
         midi.fill_set = False
         shape = deepcopy(shape)
         shape = keyblend(shape, color_to_shape(shape, fill), key=lastfill)
+    shape = swap(shape, v=midi.swap_v, h=midi.swap_h)
 
     draw(win, shape, COLORS)
     dual.flip()
