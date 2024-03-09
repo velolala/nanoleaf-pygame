@@ -44,28 +44,27 @@ beat = partial(on, EVERY_QUARTER, partial(print, "onbeat"))
 offbeat = partial(on, EVERY_OFFBEAT, partial(print, "offbeat"))
 
 
-def once(container):
-    installed = False
-    fired = False
+def nth(matcher_fn, callback_fn, container, n):
+    """Keep a reference to instance and remove from listener container
+    after `n` callbacks.
+    """
     instance = None
-
-    def installed_callback(ts):
-        def callback(count):
-            nonlocal instance
-            print("I WAS INSTALLED AT", ts, fired)
-            container.remove(instance)
-        return callback
+    executions = 0
 
     def callback(count):
         nonlocal instance
-        if not installed:
-            instance = on(EVERY_BAR4, installed_callback(count))
-            container.append(instance)
-        if fired:
-            del instance
-        print("============> match 1000")
+        nonlocal executions
+        callback_fn(count)
+        executions += 1
+        if executions == n:
+            container.remove(instance)
 
-    return on(modmatch(1000, 0), callback)
+    instance = on(matcher_fn, callback)
+    return instance
+
+
+def once(matcher_fn, callback_fn, container):
+    return nth(matcher_fn, callback_fn, container, 1)
 
 
 def tick(count):
@@ -94,7 +93,9 @@ class BeatCounter:
 
 counter = BeatCounter()
 
-counter.listeners.append(once(counter))
+counter.listeners.append(
+    once(modmatch(20000, 0), partial(print, "ONCE"), counter.listeners)
+)
 
 
 def do_tick():
