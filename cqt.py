@@ -18,17 +18,39 @@ displaywindow = 555
 # how much we queue
 q_len = 20
 # scale gain
-gain_divider = 3
+gain_divider = 100.0
 
 FMIN = librosa.note_to_hz("C1")
 
 
+def norm(x, r=(-1, 1)):
+    # normalise x to range 'r', e.g. [-1,1]
+    nom = (x - x.min()) * r[1] - r[0]
+    denom = x.max() - x.min()
+    return nom / denom + r[0]
+
+
+def sigmoid(x, k=0.1):
+    if k == 1.0:
+        k = 0
+    elif k == 0.0:
+        k = 0.001
+    # sigmoid function
+    # use k to adjust the slope
+    # note: k could be used as compressor gain
+    s = 1 / (1 + np.exp(-x / k))
+    return s
+
+
 def generate_callback(qu: Queue, _gain: Queue):
+    """
+    _gain values are range(0, 100)
+    """
     try:
-        gain = _gain.get_nowait()
-        gain /= gain_divider
+        while not _gain.empty():
+            gain = _gain.get_nowait() / gain_divider
     except Empty:
-        gain = 100
+        gain = 0.1
 
     def callback(indata, frames, time, status):
         nonlocal gain
@@ -36,8 +58,8 @@ def generate_callback(qu: Queue, _gain: Queue):
             text = " " + str(status) + " "
             print(text)
         try:
-            gain = _gain.get_nowait()
-            gain /= gain_divider
+            while not _gain.empty():
+                gain = _gain.get_nowait() / gain_divider
         except Empty:
             pass
         if any(indata):
@@ -73,20 +95,21 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
         C = np.average(np.rot90(np.rot90(C)[:displaywindow], k=-1), axis=1)
     else:
         C = np.average(C, axis=1)
+    # find maxima to clean some noise
     maxis = librosa.util.localmax(C)
     emphasis = (1.9, 0.9)  # how much we push maxima and pull neighbours
-    mul = np.array([emphasis[0] if maxis[_] else emphasis[1] for _ in range(len(maxis))])
-    before = C[0]
+    mul = np.array(
+        [emphasis[0] if maxis[_] else emphasis[1] for _ in range(len(maxis))]
+    )
     C = mul * C
-    after = C[0]
-    # print(maxis, len(C), before, after)
-    # P = C / np.linalg.norm(C)
-    # P = P * (1 / np.max(P))
-    # gain = GAIN
-    P = C * (1 / np.max(C))
-    P = P * gain
-    if np.max(P) > 9:
-        print("will clip")
+
+    # apply sigmoid
+    C = C * (1 / np.max(C))
+    C = norm(C)
+    C = sigmoid(C, k=1 - gain)
+    # normalize to 1
+    P = norm(C, r=(0, 1))
+    # format on palette width
     P = 9 * P  # palette width
     P = np.clip(P, 0, 9)  # TODO: should be no-op!
     I = P.astype(np.int8)
@@ -99,7 +122,7 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     return shape
 
 
-def main(gain=15):
+def main(gain=0.1):
     qu = Queue(q_len)
     with sd.InputStream(
         device=device,

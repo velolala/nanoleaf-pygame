@@ -73,7 +73,7 @@ class MidiRecv:
         self.fill_g = 9
         self.fill_b = 9
         self.fill_set = False
-        self._gain = Queue(1)
+        self._gain = Queue(10)
         self._gain.put(50)
         self.scene = 0
         self.swap_h = False
@@ -240,7 +240,7 @@ except NanoleafConnectionError:
 dual = NanoleafDual(nl, hello=False)
 display = dual.simulator
 
-win = dual.set_mode((12, 6), 0, DEPTH)
+win = dual.set_mode((WIDTH, HEIGHT), 0, DEPTH)
 display_clock = False
 
 
@@ -281,7 +281,9 @@ def _cqt():
             keyblend(
                 to_rgb(frame, whites),
                 color_to_shape(
-                    [[whites[0] for _ in range(12)] for _ in range(6)],
+                    [
+                        [whites[0] for _ in range(WIDTH)] for _ in range(HEIGHT)
+                    ],  # empty frame
                     midi.get_fill(),
                 ),
                 key=whites[0],
