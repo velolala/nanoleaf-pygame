@@ -7,9 +7,18 @@ from queue import Empty, Queue
 
 sr_44 = 48000
 sr_22 = 22500
-block_duration = 24
+block_duration = 48
 device = "USB Audio Device:"
-window = 16000 * 1  # // 1
+# how much data we analyze
+window = 16000 // 4  # // 1
+# what does this do?
+mindata = window // 16
+# how many samples we average for display
+displaywindow = 555
+# how much we queue
+q_len = 20
+# scale gain
+gain_divider = 3
 
 FMIN = librosa.note_to_hz("C1")
 
@@ -17,7 +26,7 @@ FMIN = librosa.note_to_hz("C1")
 def generate_callback(qu: Queue, _gain: Queue):
     try:
         gain = _gain.get_nowait()
-        gain *= 2
+        gain /= gain_divider
     except Empty:
         gain = 100
 
@@ -28,7 +37,7 @@ def generate_callback(qu: Queue, _gain: Queue):
             print(text)
         try:
             gain = _gain.get_nowait()
-            gain *= 2
+            gain /= gain_divider
         except Empty:
             pass
         if any(indata):
@@ -59,7 +68,6 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     # )
     C = C_harm
     samples = len(C[0])
-    displaywindow = 10
 
     if samples >= displaywindow:
         C = np.average(np.rot90(np.rot90(C)[:displaywindow], k=-1), axis=1)
@@ -88,7 +96,7 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
 
 
 def main(gain=15):
-    qu = Queue(60)
+    qu = Queue(q_len)
     with sd.InputStream(
         device=device,
         channels=1,
@@ -98,7 +106,7 @@ def main(gain=15):
     ):
         data = np.empty((0, 0))
         while True:
-            time.sleep(0.1)
+            time.sleep(0.001)
             p = None
             while not qu.empty():
                 try:
@@ -107,7 +115,7 @@ def main(gain=15):
                     data = np.append(data, indata)
                 except Empty:
                     pass
-            if len(data) > 2000:
+            if len(data) > mindata:
                 # discard some
                 # print(len(data))
                 shape = calc_cqt(data, gain)

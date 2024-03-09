@@ -118,7 +118,7 @@ class MidiRecv:
                     "control_change",
                     channel=12,
                     control=control,
-                    value=int(value / range * 127. + 0.5),
+                    value=int(value / range * 127.0 + 0.5),
                 ).bytes()
             )
 
