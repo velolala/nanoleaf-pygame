@@ -74,7 +74,8 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     else:
         C = np.average(C, axis=1)
     maxis = librosa.util.localmax(C)
-    mul = np.array([1.9 if maxis[_] else 0.9 for _ in range(len(maxis))])
+    emphasis = (1.9, 0.9)  # how much we push maxima and pull neighbours
+    mul = np.array([emphasis[0] if maxis[_] else emphasis[1] for _ in range(len(maxis))])
     before = C[0]
     C = mul * C
     after = C[0]
@@ -82,9 +83,12 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     # P = C / np.linalg.norm(C)
     # P = P * (1 / np.max(P))
     # gain = GAIN
-    P = C * gain
+    P = C * (1 / np.max(C))
+    P = P * gain
+    if np.max(P) > 9:
+        print("will clip")
     P = 9 * P  # palette width
-    P = np.clip(P, 0, 9)
+    P = np.clip(P, 0, 9)  # TODO: should be no-op!
     I = P.astype(np.int8)
     I = I.reshape(6, 12)
     I = np.flip(I, axis=0)
