@@ -83,7 +83,7 @@ class Beatomator:
     def __init__(self, listeners=[]):
         self.running = False
         self.counter = 0
-        self.lasttick = None
+        self.lasttick = 0
         self.listeners = listeners
 
     def schedule(self, when, callback, repetitions=0):
@@ -111,9 +111,15 @@ class Beatomator:
             1,
         )
 
-    def tick(self):
+    def tick(self, min_bpm=10.0):
         t = monotonic()
-        if not self.running or t - self.lasttick > (60.0 / 30.0 / 96.0):
+        if not self.running or t - self.lasttick > (60.0 / min_bpm / 96.0):
+            print(
+                "setting 0",
+                not self.running,
+                t - self.lasttick,
+                (60.0 / min_bpm / 96.0),
+            )
             self.counter = 0
             self.running = True
         else:

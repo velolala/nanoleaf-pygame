@@ -7,7 +7,6 @@ from queue import Queue
 
 import pygame as pg
 
-pg.init()
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Color, Surface
 from rtmidi.midiutil import open_midiinput, open_midioutput
@@ -17,6 +16,7 @@ from anim import RandomAnim
 from clock import now, fadeout
 import spec
 import cqt
+import beatomator as beat
 
 from osci import SineOscillator
 from canvas_monitor import COLORS, DEPTH, Nanoleaf, NanoleafDual
@@ -50,6 +50,9 @@ from shapes import (
     doggo2,
 )
 from colors import whites
+
+
+pg.init()
 
 
 def signal_handler(sig, frame):
@@ -238,6 +241,24 @@ m_in = install_midi(midi)
 
 init_midi_controller(m_out)
 
+beatomator = beat.Beatomator()
+
+
+def random_fillh(count):
+    midi.fill_h = (midi.fill_h + 2.5) % 360
+    midi.fill_s = 50.0
+    midi.fill_l = 50.0
+    midi._rgb_from_hsl()
+    midi.fill_set = True
+
+
+def random_front_col(count):
+    midi.front_col = random.random() * 360
+
+
+beatomator.schedule(*beat.mk_beat(random_fillh))
+beatomator.schedule(*beat.mk_measure(random_front_col))
+
 # display = NanoleafDisplaySimulator((12, 6), hello=False)
 nl = None
 try:
@@ -277,6 +298,7 @@ def _cqt():
     gen = cqt.main(midi._gain)
     count = 0
     move = rshift
+    frame = velo
     while True:
         count += abs(midi.speed_x) * 10
         if midi.speed_x < 0:
@@ -308,6 +330,7 @@ def _spec():
     count = 0
     move = rshift
     palette = whites
+    frame = velo
     while True:
         count += abs(midi.speed_x) * 10
         if midi.speed_x < 0:
@@ -438,6 +461,7 @@ frames = _cqt()
 
 while True:
     dt = clock.tick(FPS)
+    [beatomator.tick() for _ in range(12)]
     for event in pg.event.get():
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:

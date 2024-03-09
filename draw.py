@@ -159,7 +159,7 @@ def palette_hsl_mod(palette, parameter):
         intensity = color[0] / 255.0
         c = Color(color)
         h, s, l, _ = c.hsla
-        h = 360.0 * (parameter / 100.0)
+        h = 360.0 * (parameter / 100.0) % 360
         s = 100.0
         l = 50.0 * intensity
         c.hsla = (h, s, l)
