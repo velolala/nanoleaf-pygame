@@ -67,17 +67,37 @@ def once(matcher_fn, callback_fn, container):
     return nth(matcher_fn, callback_fn, container, 1)
 
 
-def tick(count):
-    if True:
-        print(count)
-
-
 class BeatCounter:
     def __init__(self, listeners=[phrase(), measure(), beat(), offbeat()]):
         self.running = False
         self.counter = 0
         self.lasttick = None
         self.listeners = listeners
+
+    def schedule(self, when, callback, repetitions=0):
+        """
+        Args:
+            `when(count) == True` then call
+            `callback(count)` for
+            `repetitions` times. `repetitions=0` means indefinitely.
+        """
+        if repetitions == 0:
+            instance = on(when, callback)
+        else:
+            instance = nth(when, callback, self.listeners, repetitions)
+        self.listeners.append(instance)
+
+    def schedule_later(self, delay, when, callback, repetitions=0):
+        targetcount = self.counter + delay
+
+        def croncallback(count):
+            self.schedule(when, callback, repetitions)
+
+        self.schedule(
+            lambda count: targetcount == count,
+            croncallback,
+            1,
+        )
 
     def tick(self):
         t = monotonic()
@@ -93,19 +113,13 @@ class BeatCounter:
 
 counter = BeatCounter()
 
-counter.listeners.append(
-    once(modmatch(20000, 0), partial(print, "ONCE"), counter.listeners)
-)
-
-
-def do_tick():
-    counter.tick()
+counter.schedule_later(BAR4, EVERY_BAR4, partial(print, "NTH"), 5)
 
 
 def run():
     while True:
         sleep(60.0 / 120.0 / 96.0)
-        do_tick()
+        counter.tick()
 
 
 if __name__ == "__main__":
