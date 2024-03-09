@@ -12,6 +12,7 @@ from queue import Queue, Empty, Full
 HEIGHT = 6
 
 device = "USB Audio Device:"
+device = None
 
 block_duration = 22  # block size ms
 
