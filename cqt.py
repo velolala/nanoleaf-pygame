@@ -9,6 +9,8 @@ sr_44 = 48000
 sr_22 = 22500
 block_duration = 48
 device = "USB Audio Device:"
+# how fast we recalculate
+update_interval = 0.001
 # how much data we analyze
 window = 16000 // 4  # // 1
 # what does this do?
@@ -46,6 +48,7 @@ def generate_callback(qu: Queue, _gain: Queue):
     """
     _gain values are range(0, 100)
     """
+    gain = 0.1
     try:
         while not _gain.empty():
             gain = _gain.get_nowait() / gain_divider
@@ -133,7 +136,7 @@ def main(gain=0.1):
     ):
         data = np.empty((0, 0))
         while True:
-            time.sleep(0.001)
+            time.sleep(update_interval)
             p = None
             while not qu.empty():
                 try:
