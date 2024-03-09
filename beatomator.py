@@ -15,6 +15,33 @@ def modmatch(matcher, target_value):
     )
 
 
+BPQM = 96
+QUARTER = BPQM
+BAR4 = BPQM * 4
+PHRASE8 = BAR4 * 8
+
+EVERY_QUARTER = modmatch(QUARTER, 0)
+EVERY_OFFBEAT = modmatch(QUARTER, QUARTER // 2)
+EVERY_BAR4 = modmatch(BAR4, 0)
+EVERY_PHRASE8 = modmatch(PHRASE8, 0)
+
+
+def mk_phrase(fn=lambda c: print(" " * 8, c)):
+    return (EVERY_PHRASE8, fn)
+
+
+def mk_measure(fn=lambda c: print(" " * 2, c)):
+    return (EVERY_BAR4, fn)
+
+
+def mk_beat(fn=partial(print, "onbeat")):
+    return (EVERY_QUARTER, fn)
+
+
+def mk_offbeat(fn=partial(print, "offbeat")):
+    return (EVERY_OFFBEAT, fn)
+
+
 def on(trigger_fn, callback_fn):
     """Create a function
         `f(input)`
@@ -28,25 +55,9 @@ def on(trigger_fn, callback_fn):
     return _
 
 
-BPQM = 96
-QUARTER = BPQM
-BAR4 = BPQM * 4
-PHRASE8 = BAR4 * 8
-
-EVERY_QUARTER = modmatch(QUARTER, 0)
-EVERY_OFFBEAT = modmatch(QUARTER, QUARTER // 2)
-EVERY_BAR4 = modmatch(BAR4, 0)
-EVERY_PHRASE8 = modmatch(PHRASE8, 0)
-
-phrase = partial(on, EVERY_PHRASE8, lambda c: print(" " * 8, c))
-measure = partial(on, EVERY_BAR4, lambda c: print(" " * 2, c))
-beat = partial(on, EVERY_QUARTER, partial(print, "onbeat"))
-offbeat = partial(on, EVERY_OFFBEAT, partial(print, "offbeat"))
-
-
 def nth(matcher_fn, callback_fn, container, n):
-    """Keep a reference to instance and remove from listener container
-    after `n` callbacks.
+    """Like `on`, but keep a reference to instance and remove
+    from listener container after `n` callbacks.
     """
     instance = None
     executions = 0
@@ -64,11 +75,12 @@ def nth(matcher_fn, callback_fn, container, n):
 
 
 def once(matcher_fn, callback_fn, container):
+    """Like `on` but run only once before removing from listener container."""
     return nth(matcher_fn, callback_fn, container, 1)
 
 
-class BeatCounter:
-    def __init__(self, listeners=[phrase(), measure(), beat(), offbeat()]):
+class Beatomator:
+    def __init__(self, listeners=[]):
         self.running = False
         self.counter = 0
         self.lasttick = None
@@ -111,16 +123,17 @@ class BeatCounter:
             listener(self.counter)
 
 
-counter = BeatCounter()
-
-counter.schedule_later(BAR4, EVERY_BAR4, partial(print, "NTH"), 5)
-
-
-def run():
-    while True:
-        sleep(60.0 / 120.0 / 96.0)
-        counter.tick()
-
-
 if __name__ == "__main__":
-    run()
+
+    def run(beatomator):
+        while True:
+            sleep(60.0 / 120.0 / 96.0)
+            beatomator.tick()
+
+    beatomator = Beatomator()
+    for task in [mk_phrase(), mk_measure(), mk_beat(), mk_offbeat()]:
+        beatomator.schedule(*task)
+
+    beatomator.schedule_later(BAR4, EVERY_BAR4, partial(print, "NTH"), 5)
+
+    run(beatomator)
