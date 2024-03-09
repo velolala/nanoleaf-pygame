@@ -27,6 +27,7 @@ from draw import (
     dshift,
     keyblend,
     lshift,
+    palette_hsl_mod,
     rshift,
     scroll,
     scroll_in,
@@ -73,6 +74,7 @@ class MidiRecv:
         self.fill_g = 9
         self.fill_b = 9
         self.fill_set = False
+        self.front_col = 100.0
         self._gain = Queue(10)
         self._gain.put(50)
         self.scene = 0
@@ -154,6 +156,10 @@ class MidiRecv:
             self.fill_l = content["value"] / 127.0 * 100
             self.update_color_knobs("hsl")
             self.fill_set = True
+        # Front parameter
+        if content["control"] == 11:
+            self.front_col = content["value"] / 127.0 * 100
+
         # speed X/Y
         if content["control"] == 14:
             # max speed should be [-0.0555555, 0.05555555]
@@ -277,16 +283,18 @@ def _cqt():
         else:
             move = rshift
         frame = next(gen) or frame
+        palette = palette_hsl_mod(whites, midi.front_col)
         yield move(
             keyblend(
-                to_rgb(frame, whites),
+                to_rgb(frame, palette),
                 color_to_shape(
                     [
-                        [whites[0] for _ in range(WIDTH)] for _ in range(HEIGHT)
+                        [palette[0] for _ in range(WIDTH)]
+                        for _ in range(HEIGHT)
                     ],  # empty frame
                     midi.get_fill(),
                 ),
-                key=whites[0],
+                key=palette[0],
             ),
             int(count / 8) % 12,
             wrap=True,
@@ -307,7 +315,7 @@ def _spec():
         frame = next(gen) or frame
         yield move(
             keyblend(
-                to_rgb(frame, whites),
+                to_rgb(frame, palette),
                 color_to_shape(
                     [[whites[0] for _ in range(12)] for _ in range(6)],
                     midi.get_fill(),

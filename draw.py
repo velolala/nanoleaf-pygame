@@ -1,5 +1,6 @@
 from itertools import repeat
 from copy import deepcopy
+from pygame import Color
 
 EMPTY = (0, 0, 0)
 
@@ -147,6 +148,23 @@ def scroll(shape, wrap=True):
 def fade(frames, target):
     for i in range(1, frames + 1):
         yield min(1, 1.0 / i + target)
+
+
+def palette_hsl_mod(palette, parameter):
+    if parameter == 0.0:
+        return palette
+    palette = deepcopy(palette)
+    result = []
+    for color in palette:
+        intensity = color[0] / 255.0
+        c = Color(color)
+        h, s, l, _ = c.hsla
+        h = 360.0 * (parameter / 100.0)
+        s = 100.0
+        l = 50.0 * intensity
+        c.hsla = (h, s, l)
+        result.append(c.rgb)
+    return result
 
 
 def to_rgb(shape, palette, fade=1):

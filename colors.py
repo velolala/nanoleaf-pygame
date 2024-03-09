@@ -10,6 +10,7 @@ from nanoleafapi import (
     WHITE,
 )
 from collections import namedtuple
+from pygame import Color
 
 BLACK = (0, 0, 0)
 
@@ -27,7 +28,12 @@ COLORS = [
 ]
 palette = COLORS
 whites = [
-    (min(255, 2**i), min(255, 2**i), min(255, 2**i)) for i in range(10)
+    (
+        (2**i / 2**10 * 255),
+        (2**i / 2**10 * 255),
+        (2**i / 2**10 * 255),
+    )
+    for i in range(10)
 ]
 
 RGBA = namedtuple("RGBA", ["r", "g", "b", "a"])
