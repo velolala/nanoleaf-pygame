@@ -21,6 +21,9 @@ displaywindow = 555
 q_len = 20
 # scale gain
 gain_divider = 100.0
+# noise gate
+gate_sum_threshold = 100
+gate_abs_threshold = 0.2
 
 FMIN = librosa.note_to_hz("C1")
 
@@ -74,6 +77,11 @@ def generate_callback(qu: Queue, _gain: Queue):
 
 def calc_cqt(y, gain, sr=sr_44, harm=True):
     start = time.monotonic()
+    if (
+        abs(np.sum(y)) < gate_sum_threshold
+        or max((abs(np.min(y)), abs(np.max(y)))) < gate_abs_threshold
+    ):
+        y = np.zeros(y.shape)
     harm_y = librosa.effects.harmonic(y, margin=8)
     C_harm = np.abs(
         librosa.cqt(
@@ -115,11 +123,11 @@ def calc_cqt(y, gain, sr=sr_44, harm=True):
     # format on palette width
     P = 9 * P  # palette width
     P = np.clip(P, 0, 9)  # TODO: should be no-op!
-    I = P.astype(np.int8)
-    I = I.reshape(6, 12)
-    I = np.flip(I, axis=0)
+    P = P.astype(np.int8)
+    P = P.reshape(6, 12)
+    P = np.flip(P, axis=0)
     shape = io.StringIO()
-    np.savetxt(shape, I, fmt="%s", delimiter="")
+    np.savetxt(shape, P, fmt="%s", delimiter="")
     shape = shape.getvalue()
     # print(time.monotonic() - start)
     return shape

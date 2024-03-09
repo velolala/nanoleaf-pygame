@@ -6,6 +6,7 @@ import random
 from queue import Queue
 
 import pygame as pg
+
 pg.init()
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Color, Surface
