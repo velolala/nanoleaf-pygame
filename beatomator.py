@@ -3,7 +3,11 @@ from operator import mod as _mod
 from functools import partial
 
 
-def mod(matcher, target_value):
+def modmatch(matcher, target_value):
+    """Create a function
+        `f(input)`
+    that matches
+        `input` % matcher == target_value."""
     # reverse the arguments for operator.mod and add target matching
     return (
         lambda input: partial(lambda b, a: _mod(a, b), matcher)(input)
@@ -12,6 +16,11 @@ def mod(matcher, target_value):
 
 
 def on(trigger_fn, callback_fn):
+    """Create a function
+        `f(input)`
+    that fires `callback_fn(input)` when `trigger_fn(input)` returns `True`
+    """
+
     def _(input):
         if trigger_fn(input):
             callback_fn(input)
@@ -19,10 +28,44 @@ def on(trigger_fn, callback_fn):
     return _
 
 
-phrase = on(mod(96 * 4 * 8, 0), lambda c: print(" " * 8, c))
-measure = on(mod(96 * 4, 0), lambda c: print(" " * 2, c))
-beat = on(mod(96, 0), print)
-offbeat = on(mod(96, 96 // 2), lambda c: print("offbeat"))
+BPQM = 96
+QUARTER = BPQM
+BAR4 = BPQM * 4
+PHRASE8 = BAR4 * 8
+
+EVERY_QUARTER = modmatch(QUARTER, 0)
+EVERY_OFFBEAT = modmatch(QUARTER, QUARTER // 2)
+EVERY_BAR4 = modmatch(BAR4, 0)
+EVERY_PHRASE8 = modmatch(PHRASE8, 0)
+
+phrase = partial(on, EVERY_PHRASE8, lambda c: print(" " * 8, c))
+measure = partial(on, EVERY_BAR4, lambda c: print(" " * 2, c))
+beat = partial(on, EVERY_QUARTER, partial(print, "onbeat"))
+offbeat = partial(on, EVERY_OFFBEAT, partial(print, "offbeat"))
+
+
+def once(container):
+    installed = False
+    fired = False
+    instance = None
+
+    def installed_callback(ts):
+        def callback(count):
+            nonlocal instance
+            print("I WAS INSTALLED AT", ts, fired)
+            container.remove(instance)
+        return callback
+
+    def callback(count):
+        nonlocal instance
+        if not installed:
+            instance = on(EVERY_BAR4, installed_callback(count))
+            container.append(instance)
+        if fired:
+            del instance
+        print("============> match 1000")
+
+    return on(modmatch(1000, 0), callback)
 
 
 def tick(count):
@@ -31,7 +74,7 @@ def tick(count):
 
 
 class BeatCounter:
-    def __init__(self, listeners=[phrase, measure, beat, offbeat]):
+    def __init__(self, listeners=[phrase(), measure(), beat(), offbeat()]):
         self.running = False
         self.counter = 0
         self.lasttick = None
@@ -50,6 +93,8 @@ class BeatCounter:
 
 
 counter = BeatCounter()
+
+counter.listeners.append(once(counter))
 
 
 def do_tick():
