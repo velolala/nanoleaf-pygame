@@ -6,6 +6,7 @@ import random
 from queue import Queue
 
 import pygame as pg
+pg.init()
 from nanoleafapi.nanoleaf import NanoleafConnectionError
 from pygame import Color, Surface
 from rtmidi.midiutil import open_midiinput, open_midioutput
@@ -74,7 +75,7 @@ class MidiRecv:
         self.fill_g = 9
         self.fill_b = 9
         self.fill_set = False
-        self.front_col = 100.0
+        self.front_col = 0.0
         self._gain = Queue(10)
         self._gain.put(50)
         self.scene = 0
@@ -230,7 +231,6 @@ def init_midi_controller(out):
     )
 
 
-pg.init()
 m_out = install_midi_out()
 midi = MidiRecv(m_out)
 m_in = install_midi(midi)
@@ -306,6 +306,7 @@ def _spec():
     gen = spec.main(midi._gain, smoothing=FPS // 10)
     count = 0
     move = rshift
+    palette = whites
     while True:
         count += abs(midi.speed_x) * 10
         if midi.speed_x < 0:
@@ -313,14 +314,18 @@ def _spec():
         else:
             move = rshift
         frame = next(gen) or frame
+        palette = palette_hsl_mod(whites, midi.front_col)
         yield move(
             keyblend(
                 to_rgb(frame, palette),
                 color_to_shape(
-                    [[whites[0] for _ in range(12)] for _ in range(6)],
+                    [
+                        [palette[0] for _ in range(WIDTH)]
+                        for _ in range(HEIGHT)
+                    ],  # empty frame
                     midi.get_fill(),
                 ),
-                key=whites[0],
+                key=palette[0],
             ),
             int(count / 8) % 12,
             wrap=True,
