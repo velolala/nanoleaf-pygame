@@ -85,6 +85,7 @@ class Beatomator:
         self.counter = 0
         self.lasttick = 0
         self.listeners = listeners
+        self.props = {}
 
     def schedule(self, when, callback, repetitions=0):
         """
@@ -100,6 +101,8 @@ class Beatomator:
         self.listeners.append(instance)
 
     def schedule_later(self, delay, when, callback, repetitions=0):
+        # TODO: Fix the semantics of delay:
+        # are we executing callback the first time after delay?
         targetcount = self.counter + delay
 
         def croncallback(count):
@@ -110,6 +113,12 @@ class Beatomator:
             croncallback,
             1,
         )
+
+    def schedule_next(self, grid, when, callback, repetitions=0):
+        # TODO: Fix the semantics of delay:
+        # are we executing callback the first time after delay?
+        delay = ((self.counter // grid + 1) * grid) - self.counter
+        return self.schedule_later(delay, when, callback, repetitions)
 
     def tick(self, min_bpm=10.0):
         t = monotonic()
