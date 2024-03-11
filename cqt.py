@@ -10,7 +10,7 @@ sr_22 = 22500
 block_duration = 48
 device = "USB Audio Device:"
 # how fast we recalculate
-update_interval = 0.001
+update_interval = 0.005
 # how much data we analyze
 window = 16000 // 4  # // 1
 # what does this do?
