@@ -16,18 +16,24 @@ def modmatch(matcher, target_value):
 
 
 BPQM = 96
-QUARTER = BPQM
-BAR4 = BPQM * 4
+QUARTER = BPQM // 4
+BAR4 = QUARTER * 4
 PHRASE8 = BAR4 * 8
+PHRASE4 = BAR4 * 4
 
 EVERY_QUARTER = modmatch(QUARTER, 0)
 EVERY_OFFBEAT = modmatch(QUARTER, QUARTER // 2)
 EVERY_BAR4 = modmatch(BAR4, 0)
 EVERY_PHRASE8 = modmatch(PHRASE8, 0)
+EVERY_PHRASE4 = modmatch(PHRASE4, 0)
 
 
-def mk_phrase(fn=lambda c: print(" " * 8, c)):
+def mk_phrase8(fn=lambda c: print(" " * 8, c)):
     return (EVERY_PHRASE8, fn)
+
+
+def mk_phrase4(fn=lambda c: print(" " * 8, c)):
+    return (EVERY_PHRASE4, fn)
 
 
 def mk_measure(fn=lambda c: print(" " * 2, c)):

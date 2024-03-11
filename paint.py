@@ -70,8 +70,9 @@ FILL = COLORS[0]
 
 
 class MidiRecv:
-    def __init__(self, out):
+    def __init__(self, out, tick_fn):
         self.out = out
+        self.tick = tick_fn
         self.controller_state = dict()
         self.speed_x = 0
         self.speed_y = 0
@@ -132,6 +133,8 @@ class MidiRecv:
     def __call__(self, event, data=None):
         msg, what = event
         content = decode_message(msg)
+        if content["type"] == "clock":
+            self.tick()
         # R/G/B
         if content["control"] == 0:
             self.fill_r = content["value"] / 127.0 * 255
@@ -235,19 +238,17 @@ def init_midi_controller(out):
     )
 
 
+beatomator = beat.Beatomator()
 m_out = install_midi_out()
-midi = MidiRecv(m_out)
+midi = MidiRecv(m_out, beatomator.tick)
 m_in = install_midi(midi)
 
 init_midi_controller(m_out)
 
-beatomator = beat.Beatomator()
-
 
 def random_fillh(count):
-    midi.fill_h = (midi.fill_h + 2.5) % 360
-    midi.fill_s = 50.0
-    midi.fill_l = 50.0
+    midi.fill_h = (midi.fill_h + 50) % 360
+    midi.fill_s = 100.0
     midi._rgb_from_hsl()
     midi.fill_set = True
 
@@ -256,20 +257,18 @@ def random_front_col(count):
     midi.front_col = random.random() * 360
 
 
-beatomator.schedule(*beat.mk_beat(random_fillh))
-beatomator.schedule(*beat.mk_measure(random_front_col))
+def desaturate(count):
+    if count % (2 * beat.QUARTER) == 36:
+        midi.fill_s = 100.0
+    else:
+        midi.fill_s = 0.0
+    midi._rgb_from_hsl()
+    midi.fill_set = True
 
-# display = NanoleafDisplaySimulator((12, 6), hello=False)
-nl = None
-try:
-    nl = Nanoleaf("192.168.178.214")
-except NanoleafConnectionError:
-    pass
-dual = NanoleafDual(nl, hello=False)
-display = dual.simulator
 
-win = dual.set_mode((WIDTH, HEIGHT), 0, DEPTH)
-display_clock = False
+beatomator.schedule(*beat.mk_phrase4(random_fillh))
+beatomator.schedule(*beat.mk_beat(random_front_col))
+beatomator.schedule(*beat.mk_offbeat(desaturate))
 
 
 def save(win: Surface, out=True):
@@ -286,6 +285,35 @@ def save(win: Surface, out=True):
         if out:
             print(f'"""\n{result}\n"""')
     return pixels
+
+
+# Screen setup
+nl = None
+try:
+    nl = Nanoleaf("192.168.178.214")
+except NanoleafConnectionError:
+    pass
+dual = NanoleafDual(nl, hello=False)
+display = dual.simulator
+
+win = dual.set_mode((WIDTH, HEIGHT), 0, DEPTH)
+
+# Parameters
+display_clock = False
+
+flags = dual.simulator._screen.get_flags()
+clock = pg.Clock()
+speed_x = speed_y = 0
+moved_x = moved_y = 0
+frame = frames = None
+_prev_shape = None
+_prev_acceleration = None
+FPS = 120
+ACCEL = 0.001
+
+shape = save(win, out=False)
+fill = color_to_shape(shape, FILL)
+lastfill = fill
 
 
 def _clock():
@@ -437,20 +465,6 @@ def counter():
     yield blackout
 
 
-flags = dual.simulator._screen.get_flags()
-clock = pg.Clock()
-speed_x = speed_y = 0
-moved_x = moved_y = 0
-frame = frames = None
-_prev_shape = None
-_prev_acceleration = None
-FPS = 120
-ACCEL = 0.001
-shape = save(win, out=False)
-
-fill = color_to_shape(shape, FILL)
-lastfill = fill
-
 assert shape is not None
 assert len(shape) == 6
 assert len(shape[0]) == 12
@@ -461,7 +475,7 @@ frames = _cqt()
 
 while True:
     dt = clock.tick(FPS)
-    [beatomator.tick() for _ in range(12)]
+    # [beatomator.tick() for _ in range(12)]
     for event in pg.event.get():
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:

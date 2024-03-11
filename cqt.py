@@ -22,8 +22,8 @@ q_len = 20
 # scale gain
 gain_divider = 100.0
 # noise gate
-gate_sum_threshold = 100
-gate_abs_threshold = 0.2
+# gate_sum_threshold = 50
+gate_abs_threshold = 0.05
 
 FMIN = librosa.note_to_hz("C1")
 
@@ -78,8 +78,10 @@ def generate_callback(qu: Queue, _gain: Queue):
 def calc_cqt(y, gain, sr=sr_44, harm=True):
     start = time.monotonic()
     if (
-        abs(np.sum(y)) < gate_sum_threshold
-        or max((abs(np.min(y)), abs(np.max(y)))) < gate_abs_threshold
+        # abs(np.sum(y)) < gate_sum_threshold
+        # or
+        max((abs(np.min(y)), abs(np.max(y))))
+        < gate_abs_threshold
     ):
         y = np.zeros(y.shape)
     harm_y = librosa.effects.harmonic(y, margin=8)
