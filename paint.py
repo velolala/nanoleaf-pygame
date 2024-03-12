@@ -240,10 +240,9 @@ def init_midi_controller(out):
 
 beatomator = beat.Beatomator()
 m_out = install_midi_out()
+init_midi_controller(m_out)
 midi = MidiRecv(m_out, beatomator.tick)
 m_in = install_midi(midi)
-
-init_midi_controller(m_out)
 
 
 def random_fillh(count):
@@ -261,7 +260,7 @@ def desaturate(count):
     if count % (2 * beat.QUARTER) == 36:
         midi.fill_s = 100.0
     else:
-        midi.fill_s = 0.0
+        midi.fill_s = 50.0
     midi._rgb_from_hsl()
     midi.fill_set = True
 
@@ -486,7 +485,9 @@ while True:
             s = display.scale
             x, y = _x // s, _y // s
             pg.draw.rect(win, _color, (x, y, 1, 1))
-        if event.type == pg.KEYDOWN and pg.key.get_focused():
+        if (
+            event.type == pg.KEYDOWN
+        ):  # and pg.key.get_focused(): # synthetic key events are not focussed
             k, m = event.key, event.mod
             if m == pg.KMOD_LCTRL:
                 if k == pg.K_u:
